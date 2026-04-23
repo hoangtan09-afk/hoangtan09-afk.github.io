@@ -14,12 +14,12 @@ timezone:
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
-title: Chirpy # the main title
+title: Ho Hoang Tan # the main title
 
-tagline: A text-focused Jekyll theme # it will display as the subtitle
+tagline: Cybersecurity & everything about SOC. # it will display as the subtitle
 
 description: >- # used by seo meta and the atom feed
-  A minimal, responsive and feature-rich Jekyll theme for technical writing.
+  I'm a college student who have strong passion in Cybersecurity. Thank you for spent time to view my blog :).
 
 # Fill in the protocol & hostname for your site.
 # E.g. 'https://username.github.io', note that it does not end with a '/'.
@@ -99,7 +99,7 @@ theme_mode: # [light | dark]
 cdn:
 
 # the avatar on sidebar, support local or CORS resources
-avatar:
+avatar: https://scontent.fdad1-4.fna.fbcdn.net/v/t39.30808-6/676798627_972052749165877_7488737257203017866_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=A_IUL3hr2nwQ7kNvwE2v1Ta&_nc_oc=AdoKmmg9zg2BQ2lP6V9OkL7NymrYOIZ4Tnlmi25viPy9p42ziNtIXWDCoOeqZHn5_KdSuoJsr3WzCpiLgs59C3Mb&_nc_zt=23&_nc_ht=scontent.fdad1-4.fna&_nc_gid=8XTnG7RxSq0mfbyT2nXi2g&_nc_ss=7b2a8&oh=00_Af0KkVBuUxuchYdZ6HWl_XU6szFqT-nw9Wzu-FU1DRtZFg&oe=69EF6B1C
 
 # The URL of the site-wide social preview image used in SEO `og:image` meta tag.
 # It can be overridden by a customized `page.image` in front matter.
