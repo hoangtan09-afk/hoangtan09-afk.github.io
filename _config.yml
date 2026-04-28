@@ -14,7 +14,7 @@ timezone:
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # ↓ --------------------------
 
-title: Ho Hoang Tan # the main title
+title: Tan's blog # the main title
 
 tagline: Blue Team Lab, SOC and more. # it will display as the subtitle
 
@@ -29,17 +29,17 @@ github:
   username: hoangtan09-afk # change to your GitHub username
 
 twitter:
-  username: twitter_username # change to your Twitter username
+  username: H_h_tann09 # change to your Twitter username
 
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
   name: Ho Hoang Tan
-  email: example@domain.com # change to your email address
+  email: hohoangtan2k5@gmail.com # change to your email address
   fediverse_handle: # fill in your fediverse handle. E.g. "@username@domain.com"
   links:
     # The first element serves as the copyright owner's link
-    - https://twitter.com/username # change to your Twitter homepage
+    - https://x.com/H_h_tann09 # change to your Twitter homepage
     - https://github.com/hoangtan09-afk # change to your GitHub homepage
     # Uncomment below to add more social links
     # - https://www.facebook.com/username
