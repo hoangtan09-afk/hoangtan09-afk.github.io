@@ -1,6 +1,6 @@
 ---
 title: "Bitlocker CTF Challenge - picoCTF"
-date: 2026-05-03 00:00:00 +07000
+date: 2026-05-07 00:00:00 +07000
 categories: [CTF]
 
 ---
