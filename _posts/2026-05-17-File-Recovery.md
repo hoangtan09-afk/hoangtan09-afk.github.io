@@ -159,7 +159,7 @@ Mình sẽ đưa về lại vị trí ban đầu
 ![pic34](/assets/img/posts/FileRecovery/pic34.png)
  
  
-Như vậy chúng ta đã thành công khôi phục file bị xóa và hoàn thành trách nhiệm của một chuyên viên forensics (file còn lại cách làm cũng tương tự)
+Như vậy chúng ta đã thành công khôi phục file bị xóa và hoàn thành trách nhiệm của một chuyên viên forensics (file còn lại cách làm cũng tương tự).
 
 <br>
 
