@@ -77,7 +77,7 @@ Sau khi xong thì chúng ta được các mã hash như hình. Theo mình đây 
  
 File copy của ổ đĩa sẽ như thế này nếu bạn follow các bước trên và thành công. File này thì không mở được bằng cách thông thường. 
 
-Chúng ta sẽ dùng **Autopsy** để mở, một công forensics phục vụ việc điều tra các file ổ đĩa và bằng chứng.
+Chúng ta sẽ dùng **Autopsy** để mở, một công cụ forensics phục vụ việc điều tra các file ổ đĩa và bằng chứng.
 
 ![pic16](/assets/img/posts/FileRecovery/pic16.png)
 
@@ -118,7 +118,7 @@ Mình sẽ chỉ điểm khác biệt giữa hai cách xóa file ở đầu bài
 
 ![pic23](/assets/img/posts/FileRecovery/pic23.png)
  
-File SECRET lúc đầu chỉ xóa theo kiểu cho vào recycle bin, nên chúng ta vẫn còn thấy file SECRET còn xuất hiện ở dưới, được báo là đang ở trong trong **/$RECYCLE.BIN/** (có thể click vào log để xem trực tiếp nội dung trong file)
+File SECRET lúc đầu chỉ xóa theo kiểu cho vào recycle bin, nên chúng ta vẫn còn thấy file SECRET còn xuất hiện ở dưới, được báo là đang ở trong **/$RECYCLE.BIN/**
 
 ![pic24](/assets/img/posts/FileRecovery/pic24.png)
  
