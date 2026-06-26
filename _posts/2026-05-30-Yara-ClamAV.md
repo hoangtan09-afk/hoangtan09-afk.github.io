@@ -7,12 +7,7 @@ categories: [Malware Analysis]
 
 Hello everyone, today we will get acquainted with the Malware Analysis Lab. Specifically, we will focus on malware detection using Yara rules & ClamAV. Let's get started.
 
-
 <br>
-
-
-<span style="font-size: 20px; color: #87CEEB">**Part 1: Exploring ClamAV and Signature Analysis using AI**</span>
-
 
 **1. Installation & Sample Preparation**
  
@@ -22,6 +17,7 @@ Since I had already installed ClamAV, I only needed to run the command `sudo fre
 
 ![pic2](/assets/img/posts/Yara_ClamAV/pic2.png)
  
+
 
 Proceed to create text files containing simulated malware strings.
 
