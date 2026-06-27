@@ -5,19 +5,18 @@ categories: [Email Analysis]
 
 ---
 
-
-
-
 **Scenario**: A sales executive at Greenholt PLC has reported a suspicious email received from a known customer. The message raised several red flags: a generic greeting, an unexpected request for a money transfer, and an unsolicited attachment. According to the employee, this behavior does not align with the customer’s usual communication style. Concerned that the email may be malicious, the message has been escalated to the SOC (Security Operations Center) for further investigation. Your goal is to analyze the provided email sample and determine whether it is legitimate or part of a phishing attempt.
 
 <br>
-Đây là một bài lab về phân tích email có dấu hiệu phishing cơ bản. Chúng ta sẽ nhận được một email từ một khách hàng nhưng có rất nhiều điều đáng ngờ trong cái email này. Nhiệm vụ của chúng ta với vai trò là một SOC Analyst sẽ đi điều tra và truy vết các dấu hiệu bất thường này
+
+>Đây là một bài lab về **phân tích email** có dấu hiệu phishing cơ bản. Chúng ta sẽ nhận được email từ một khách hàng nhưng có rất nhiều điều đáng ngờ trong email này. Nhiệm vụ với vai trò là một SOC Analyst, mình và các bạn sẽ đi điều tra và **truy vết** các dấu hiệu bất thường này.
+{: .prompt-info }  
+
+<br>
 
 ![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-26-23-51-41.png)
 
-Hình trên là email chúng ta cần phân tích
 
-Để dễ dàng hơn cho việc làm quen với phân tích mail, mình sẽ đi theo format trả lời các câu hỏi trọng điểm (Q&A), để cung cấp cho các bạn một cái nhìn tổng quan và có mục tiêu hơn.
 
 <br>
 
