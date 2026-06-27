@@ -74,11 +74,11 @@ Có rất nhiều công cụ phân tích **email header** ngoài kia chẳng h�
 
 Sau khi xem view source, chọn tất cả nội dung trong **email source** và quăng lên **mxtoolbox**
  
-![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-26-23-56-49.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-37-05.png)
 
 Lướt xuống một tí tới phần **Relay Information**, bạn sẽ cần để ý đến **dòng đầu tiên**, cột **From**
 
-![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-26-23-57-18.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-37-35.png)
  
 Dòng này chứa địa chỉ IP gốc chúng ta cần tìm: **192.119.71.157**
 
@@ -153,9 +153,9 @@ có thể hiểu ngắn gọn như sau:
 
 Email này có một attachment đi kèm, chúng ta có thể tải về và xem hash của nó
  
-![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-00-03-17.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-38-52.png)
 
-![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-00-03-24.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-39-30.png)
  
 File này có tên là: **SWT_#09674321____PDF__.CAB**
 
@@ -163,7 +163,9 @@ File này có tên là: **SWT_#09674321____PDF__.CAB**
 
 ## Q10. Using the sha256sum command, what is the SHA256 hash of the file?
 
-Chỉ cần dùng câu lệnh sha256sum trong linux là chúng ta có thể biết được hash
+Chỉ cần dùng câu lệnh **sha256sum** trong linux là chúng ta có thể biết được hash
+
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-40-42.png)
  
 Hash: **2e91c533615a9bb8929ac4bb76707b2444597ce063d84a4b33525e25074fff3f**
 
@@ -176,13 +178,13 @@ Hash: **2e91c533615a9bb8929ac4bb76707b2444597ce063d84a4b33525e25074fff3f**
 
 Không chỉ biết dung lượng của file, trang này cung cấp nhiều thông tin khác như họ malware, file dropped, behaviour,…
 
-![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-00-05-01.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-35-05.png)
  
 VirusTotal cho kết quả file .CAB được 50/63 **security vendor analysis** đánh dấu là **malware**. Được gán nhãn họ malware như **msil, loki, agensla**
 
 Để biết được dung lượng file như yêu cầu của câu hỏi, hãy qua tab **Details**
  
-![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-00-05-27.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-35-45.png)
 
 Như vậy, file này có dung lượng là: **400.26 KB**
 
@@ -191,6 +193,8 @@ Như vậy, file này có dung lượng là: **400.26 KB**
 ## Q12. Continue your research on the file. What is the actual file type of the attachment?
 
 Dựa vào hình ảnh trên, để ý phần **File Type** có ghi là RAR.
+
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-41-45.png)
 
 Vậy thực chất file này là loại file **.RAR** chứ không phải .CAB như ban đầu.
 
