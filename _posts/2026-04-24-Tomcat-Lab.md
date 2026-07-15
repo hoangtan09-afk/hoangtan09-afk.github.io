@@ -1,7 +1,7 @@
 ---
 title: "Analyze network traffic using Wireshark & NetworkMiner"
 date: 2026-04-24 00:00:00 +07000
-categories: [Lab]
+categories: [Network Analysis]
 
 ---
 

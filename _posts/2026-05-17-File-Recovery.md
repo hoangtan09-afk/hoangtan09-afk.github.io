@@ -1,7 +1,7 @@
 ---
 title: "File Recovery"
 date: 2026-05-17 00:00:00 +07000
-categories: [Lab]
+categories: [Forensics]
 
 ---
 
