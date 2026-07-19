@@ -5,8 +5,20 @@ order: 4
 ---
 
 
-Greeting! I'm Tan, and this is my blog. I am currently a cybersecurity student at FPT University, Vietnam. I am interested in investigating, monitoring, working with various types of logs, and responding to incidents. My goal is to eradicate black-hat hackers to bring peace to the online space :) If you share my passion and interests, please feel free to share your experience and knowledge with me through the contact information below. Have a nice day!
+Hi, I’m Tan, an Information Assurance student at FPT University with a strong interest in Blue Team operations, digital forensics, threat detection, and incident response.
+
+I enjoy investigating security incidents, analyzing logs and malicious files, and understanding how attacks occur from a defender’s perspective. Through hands-on labs and personal projects, I have gained practical experience with tools and technologies such as Wireshark, Volatility, YARA, Snort, Wazuh, VirusTotal, and various forensic utilities.
+
+This blog documents my learning journey, technical investigations, and cybersecurity lab write-ups. My goal is not only to record the final results, but also to explain the investigation process, evidence, tools, and reasoning behind each finding.
+
+I am currently working toward becoming a SOC Analyst and continuously improving my skills in security monitoring, malware analysis, digital forensics, and incident investigation.
+
+Areas of Interest
+- Security Operations Center
+- Digital Forensics and Incident Response
+- Threat Detection and Log Analysis
+- Malware and Network Traffic Analysis
+- SIEM and Security Automation
 
 
-## Contact:
-- email: hohoangtan2k5@gmail.com
+
