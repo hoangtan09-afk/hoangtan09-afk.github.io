@@ -5,125 +5,124 @@ categories: [Malware Analysis]
 
 ---
 
-Hello everyone, today we will get acquainted with the Malware Analysis Lab. Specifically, we will focus on malware detection using Yara rules & ClamAV. Let's get started.
+Chào mọi người, hôm nay chúng ta sẽ làm quen với Phòng Lab Phân tích Mã độc. Cụ thể, chúng ta sẽ tập trung vào việc phát hiện mã độc bằng các quy tắc Yara và ClamAV. Hãy bắt đầu.
 
 <br>
 
-**1. Installation & Sample Preparation**
+**1. Cài đặt và chuẩn bị mẫu**
  
 ![pic1](/assets/img/posts/Yara_ClamAV/pic1.png)
 
-Since I had already installed ClamAV, I only needed to run the command `sudo freshclam` to update the virus database for ClamAV.
+Vì mình đã cài đặt ClamAV trước đó, nên mình chỉ cần chạy lệnh `sudo freshclam` để cập nhật cơ sở dữ liệu virus cho ClamAV.
 
 ![pic2](/assets/img/posts/Yara_ClamAV/pic2.png)
  
 
-
-Proceed to create text files containing simulated malware strings.
+Tiến hành tạo các tệp văn bản chứa các chuỗi mã độc mô phỏng.
 
 ![pic3](/assets/img/posts/Yara_ClamAV/pic3.png)
 ![pic4](/assets/img/posts/Yara_ClamAV/pic4.png)
  
 
-View the hex code of the file using `xxd`.
+Xem mã hex của tệp bằng `xxd`.
 
 ![pic5](/assets/img/posts/Yara_ClamAV/pic5.png)
  
 
-`xxd` helps view the **actual content** of a file in hex format — highly useful for detecting hidden characters, writing antivirus signatures, and forensic analysis.
+`xxd` giúp xem **nội dung thực tế** của một tệp ở định dạng hex — rất hữu ích để phát hiện các ký tự ẩn, viết chữ ký diệt virus và phân tích pháp y.
 
-**2. Dissecting the ClamAV Database**
+**2. Phân tích cơ sở dữ liệu ClamAV**
 
-Extraction & Location & Decompilation
+Trích xuất & Vị trí & Giải nén
  
 ![pic6](/assets/img/posts/Yara_ClamAV/pic6.png)
 ![pic7](/assets/img/posts/Yara_ClamAV/pic7.png)
  
 
-I had already extracted it beforehand. I will proceed to find the rule in the database as follows. To do that, I will first **clamscan** a folder containing **malware** to see which rule is returned in the results:
+mình đã trích xuất nó trước đó. mình sẽ tiếp tục tìm quy tắc trong cơ sở dữ liệu như sau. Để làm việc đó, trước tiên mình sẽ **clamscan** một thư mục chứa **mã độc** để xem quy tắc nào được trả về trong kết quả:
  
 ![pic8](/assets/img/posts/Yara_ClamAV/pic8.png)
 
-I successfully scanned and found **Win.Packed.Malwarex-10059342-0**.
+mình đã quét thành công và tìm thấy **Win.Packed.Malwarex-10059342-0**.
 
-Proceed to find this rule in the database.
+Tiến hành tìm quy tắc này trong cơ sở dữ liệu.
 
 ![pic9](/assets/img/posts/Yara_ClamAV/pic9.png)
  
-I found this rule located inside the **daily.ldb** file.
+mình thấy quy tắc này nằm bên trong tệp **daily.ldb**.
 
-Decompiling Hex to ASCII
+Giải mã Hex sang ASCII
 
 ![pic10](/assets/img/posts/Yara_ClamAV/pic10.png)
  
-It seems this is byte code (machine code), resulting in characters we cannot read yet. I will use **ndisasm** to disassemble it into **Assembly**.
+Có vẻ đây là mã byte (mã máy), tạo ra các ký tự mà chúng ta vẫn chưa thể đọc. mình sẽ dùng **ndisasm** để giải mã nó thành **Assembly**.
 
 ![pic11](/assets/img/posts/Yara_ClamAV/pic11.png)
  
-After researching online for a while, I understood the **functionality** of these **Assembly** segments. Specifically:
+Sau khi nghiên cứu trực tuyến một thời gian, mình hiểu được **chức năng** của các đoạn **Assembly** này. Cụ thể:
 
-These **Assembly** lines belong to the **Packer/Stub** (bootstrap code) of the malware. The main purpose is **self-decoding** to unpack the malicious body into memory to evade AV detection.
+Những dòng **Assembly** này thuộc về **Packer/Stub** (mã khởi động) của mã độc. Mục đích chính là **tự giải mã** để giải nén phần thân độc hại vào bộ nhớ nhằm trốn tránh phát hiện bởi AV.
 
-**Summary of commands:**
--	**insd, pusha:** Used to get the execution address and preserve register states before decryption.
--	**cs pop ecx:** A memory context switching technique to access compressed data.
--	**sub ah, [eax+0x45], das:** This is the decryption algorithm (often subtraction or XOR) to restore the original machine code from the obfuscated data.
+**Tóm tắt các lệnh:**
+- **insd, pusha:** Dùng để lấy địa chỉ thực thi và giữ nguyên trạng thái các thanh ghi trước khi giải mã.
+- **cs pop ecx:** Một kỹ thuật chuyển đổi ngữ cảnh bộ nhớ để truy cập dữ liệu nén.
+- **sub ah, [eax+0x45], das:** Đây là thuật toán giải mã (thường là phép trừ hoặc XOR) để khôi phục mã máy gốc từ dữ liệu bị làm rối.
 
-In other words: This is a "protective shell" that helps the malware hide while on the hard drive and only reveal itself when executed in memory.
+Nói cách khác: Đây là một "vỏ bảo vệ" giúp mã độc ẩn mình trên ổ cứng và chỉ lộ ra khi được thực thi trong bộ nhớ.
 
 
-**3. Creating Custom Signatures**
+**3. Tạo chữ ký tùy chỉnh**
 
-Create the `mywildcard.ndb` file using the syntax: `Malware_Name:Target:Offset:Hex_String`
+Tạo tệp `mywildcard.ndb` bằng cú pháp: `Malware_Name:Target:Offset:Hex_String`
 
 ![pic12](/assets/img/posts/Yara_ClamAV/pic12.png)
  
 
-**Creating the .ndb file serves 3 main purposes:**
+**Việc tạo tệp .ndb phục vụ 3 mục đích chính:**
 
-**1. Detecting new malware:** Providing ClamAV with the "signature" of a new malware type that the system's default database does not yet have.
+**1. Phát hiện mã độc mới:** Cung cấp cho ClamAV "chữ ký" của một loại mã độc mới mà cơ sở dữ liệu mặc định của hệ thống vẫn chưa có.
 
-**2. Proactive control:** Allowing me to define separate custom scan rules to detect suspicious files in the Lab environment without affecting the system database.
+**2. Kiểm soát chủ động:** Cho phép mình định nghĩa các quy tắc quét tùy chỉnh riêng để phát hiện các tệp đáng ngờ trong môi trường Lab mà không ảnh hưởng đến cơ sở dữ liệu hệ thống.
 
-**3. Studying the structure:** Helping me understand how ClamAV analyzes and matches malware based on Hex strings or logical rules (Logical Signatures).
+**3. Nghiên cứu cấu trúc:** Giúp mình hiểu cách ClamAV phân tích và khớp các mẫu mã độc dựa trên chuỗi Hex hoặc các quy tắc logic (Logical Signatures).
 
-Proceed to perform a test scan with the newly created database using the command:
+Tiến hành thực hiện một lần quét thử với cơ sở dữ liệu mới tạo bằng lệnh:
 
 **clamscan -d mywildcard.ndb test1.txt test2.txt test3.txt test4.txt test5.txt**
 
 ![pic13](/assets/img/posts/Yara_ClamAV/pic13.png)
 
-Based on the results, the custom database I created successfully scanned the 5 simulated text files generated at the beginning of the lab.
+Dựa trên kết quả, cơ sở dữ liệu tùy chỉnh mình tạo đã quét thành công 5 tệp văn bản mô phỏng được tạo ở đầu buổi lab.
 
-This means **ClamAV** has successfully:
+Điều này có nghĩa **ClamAV** đã thực hiện thành công:
 
--	Successfully loaded the `mywildcard.ndb` database
--	Compiled all 6/6 signatures
--	Scanned the test files
--	Detected files matching the custom signatures I wrote
--	The `.UNOFFICIAL` suffix is normal, as this is a **custom signature** I created, not an official signature from ClamAV.
+- Đã tải thành công cơ sở dữ liệu `mywildcard.ndb`
+- Đã biên dịch tất cả 6/6 chữ ký
+- Đã quét các tệp kiểm tra
+- Đã phát hiện các tệp khớp với các chữ ký tùy chỉnh mình viết
+- Tiền tố `.UNOFFICIAL` là bình thường, vì đây là **chữ ký tùy chỉnh** mình tạo, không phải chữ ký chính thức từ ClamAV.
 
-Now I will extract 08 signature samples from the ClamAV database for analysis:
+Bây giờ mình sẽ trích xuất 08 mẫu chữ ký từ cơ sở dữ liệu ClamAV để phân tích:
 
-**- First 4 samples:** I will use `xxd` to translate Hex to ASCII.
+**- 4 mẫu đầu tiên:** mình sẽ dùng `xxd` để dịch Hex sang ASCII.
 
-**- Last 4 samples:** I will use `ndisasm` to disassemble Hex into Bytecode (Assembly), then use AI to analyze the behavior.
+**- 4 mẫu cuối:** mình sẽ dùng `ndisasm` để giải mã Hex thành Bytecode (Assembly), sau đó dùng AI để phân tích hành vi.
 
 <br>
 <br>
 
-<span style="font-size: 16px; color: #87CEEB">**Translate to ASCII**</span>
+<span style="font-size: 16px; color: #87CEEB">**Dịch sang ASCII**</span>
 <br>
 
-I run the following command to extract the **first 04 samples** from **main.ndb** and **daily.ndb** first:
+mình chạy lệnh sau để trích xuất **04 mẫu đầu tiên** từ **main.ndb** và **daily.ndb** trước:
 
 **grep -E '^[^:]+:[0-9]+:[^:]+:[0-9A-Fa-f]+$' main.ndb daily.ndb \ | grep -iE '68747470|2e657865|2e646c6c|6d6163726f|736372697074|766273|706f7765727368656c6c|636d642e657865|4d6963726f736f6674|436f64654d6f64756c65' \ | head -n 4 > ascii_4.txt**
 
-The command I run prioritizes filtering signatures that can be translated into ASCII without displaying machine code.
+Lệnh mình chạy ưu tiên lọc các chữ ký có thể được dịch sang ASCII mà không hiển thị mã máy.
 
 ![pic14](/assets/img/posts/Yara_ClamAV/pic14.png)
  
-Now I proceed to translate to ASCII for each type:
+Bây giờ mình tiến hành dịch sang ASCII cho từng loại:
 
 <br>
 
@@ -131,17 +130,17 @@ Now I proceed to translate to ASCII for each type:
 
 ![pic15](/assets/img/posts/Yara_ClamAV/pic15.png)
  
-**Meaning of this signature:**
+**Ý nghĩa của chữ ký này:**
 
-Through my investigation, I believe this appears to be **a VBA macro code segment in a malicious Office document**. Main indicators:
+Thông qua quá trình điều tra, mình tin rằng đây có vẻ là **một đoạn mã macro VBA trong tài liệu Office độc hại**. Các chỉ dấu chính:
 
-- **CodeModule.Lines(2, 1):** accesses code lines in the VBA module.
+- **CodeModule.Lines(2, 1):** truy cập các dòng mã trong module VBA.
 
-- **Components.Item(...):** manipulates components/macros inside the VBA project.
+- **Components.Item(...):** thao tác các thành phần/macro bên trong dự án VBA.
 
-- **<> "'Iron" Then:** conditional statement checking if the code line content is different from the string `'Iron`.
+- **<> "'Iron" Then:** câu lệnh điều kiện kiểm tra xem nội dung dòng mã có khác chuỗi `'Iron` hay không.
 
-This is likely a signature to detect self-checking/self-modifying VBA macro code, commonly found in macro malware used for **hiding code, self-modifying macros, or checking for infection markers.**
+Có khả năng đây là một chữ ký dùng để phát hiện mã macro tự kiểm tra/tự sửa đổi, thường thấy trong mã độc macro dùng để **ẩn mã, tự sửa đổi macro hoặc kiểm tra dấu hiệu nhiễm.**
 
 <br>
 
@@ -149,9 +148,9 @@ This is likely a signature to detect self-checking/self-modifying VBA macro code
 
 ![pic16](/assets/img/posts/Yara_ClamAV/pic16.png)
  
-**Meaning of this signature:**
+**Ý nghĩa của chữ ký này:**
 
-I found that this signature has many unreadable bytes, but some notable IOCs/strings are still visible:
+mình nhận thấy chữ ký này có nhiều byte không đọc được, nhưng vẫn có một số IOC/chuỗi đáng chú ý có thể nhìn thấy:
 
 - http://...
 - .exe
@@ -159,13 +158,13 @@ I found that this signature has many unreadable bytes, but some notable IOCs/str
 - Passw...
 - Exit
 
-The presence of `http://...` and `.exe` strings: likely related to **downloading executable files from URLs** or identifying samples with **payload download** behaviors.
+Sự hiện diện của các chuỗi `http://...` và `.exe`: có khả năng liên quan đến **tải xuống tệp thực thi từ URL** hoặc xác định các mẫu có hành vi **tải payload**.
 
-`Software\Web...` : suggests relation to a **Registry path or software configuration on Windows**.
+`Software\Web...`: gợi ý liên quan đến **đường dẫn Registry hoặc cấu hình phần mềm trên Windows**.
 
-`Passw...` : could be related to the string "Password", commonly found in **information-stealing malware**, but this part is noisy so I cannot make a definite conclusion.
+`Passw...`: có thể liên quan đến chuỗi "Password", thường thấy trong **mã độc đánh cắp thông tin**, nhưng phần này khá nhiễu nên mình không thể kết luận chắc chắn.
 
-Many corrupted/unreadable characters: this is not a pure ASCII string, but a byte pattern used by ClamAV to identify malware.
+Nhiều ký tự bị hỏng/không đọc được: đây không phải chuỗi ASCII thuần túy, mà là một mẫu byte được ClamAV dùng để xác định mã độc.
 
 <br>
 
@@ -173,9 +172,9 @@ Many corrupted/unreadable characters: this is not a pure ASCII string, but a byt
 
 ![pic17](/assets/img/posts/Yara_ClamAV/pic17.png)
  
-**Meaning of this signature:**
+**Ý nghĩa của chữ ký này:**
 
-Decoded signature:
+Chữ ký đã giải mã:
 
 .com
 
@@ -185,12 +184,12 @@ G2h7o2st_Event
 
 \SCANREGW.EXE
 
--	**.com:** could be related to legacy executable files or a domain, but since it stands alone, I cannot draw a conclusion.
--	**DXInput.dll:** A fake DLL mimicking a system library or game input library, potentially used for masquerading.
--	**G2h7o2st_Event:** A string structured like an event or mutex name, commonly used to identify an instance or synchronize processes.
--	**\SCANREGW.EXE:** A filename resembling the old Windows tool SCANREGW.EXE, which might be abused by malware for masquerading.
+- **.com:** có thể liên quan đến các tệp thực thi cũ theo kiểu DOS hoặc một miền, nhưng vì nó đứng riêng lẻ nên mình chưa thể kết luận.
+- **DXInput.dll:** Một DLL giả mạo giống như thư viện hệ thống hoặc thư viện nhập liệu trò chơi, có khả năng được dùng để ngụy trang.
+- **G2h7o2st_Event:** Một chuỗi có cấu trúc giống tên sự kiện hoặc mutex, thường được dùng để xác định một phiên bản hoặc đồng bộ hóa tiến trình.
+- **\SCANREGW.EXE:** Một tên tệp giống công cụ Windows cũ SCANREGW.EXE, có thể bị mã độc lợi dụng để ngụy trang.
 
-Conclusion: This signature shows signs of detecting malware based on suspicious DLLs, event/mutex names, and spoofed system EXE files, but is insufficient to conclude specific behaviors.
+Kết luận: Chữ ký này cho thấy dấu hiệu phát hiện mã độc dựa trên DLL đáng ngờ, tên sự kiện/mutex và các tệp EXE hệ thống bị giả mạo, nhưng chưa đủ để kết luận về hành vi cụ thể.
 
 <br>
 
@@ -198,8 +197,8 @@ Conclusion: This signature shows signs of detecting malware based on suspicious 
 
 ![pic18](/assets/img/posts/Yara_ClamAV/pic18.png)
  
-**Meaning of this signature:**
-	This signature decodes to a partially readable string:
+**Ý nghĩa của chữ ký này:**
+Chữ ký này giải mã thành một chuỗi có thể đọc được một phần:
 
 **.com**
 
@@ -207,37 +206,37 @@ Conclusion: This signature shows signs of detecting malware based on suspicious 
 
 **http:/**
 
-- 	**"*.com"**: could be related to DOS-style .com executables, or malware samples infecting .com files.
--	**"Delta v1.0 by Retro"**: resembles an identifier string or internal name of the malware or tool left by the author.
--	**http:/**: suggests a URL component, but the string is truncated, making it insufficient to determine the C2 or download link.
--   **The first part** contains many binary bytes and segments resembling DOS/assembly instructions, so this is not pure ASCII but rather a byte pattern for malware detection.
+- **"*.com"**: có thể liên quan đến các tệp thực thi .com theo phong cách DOS, hoặc các mẫu mã độc nhiễm vào tệp .com.
+- **"Delta v1.0 by Retro"**: giống như một chuỗi nhận dạng hoặc tên nội bộ của mã độc hoặc công cụ để lại bởi tác giả.
+- **http:/**: gợi ý về một thành phần URL, nhưng chuỗi bị cắt ngắn nên chưa đủ để xác định C2 hoặc liên kết tải xuống.
+- **Phần đầu tiên** chứa nhiều byte nhị phân và các đoạn giống như lệnh DOS/assembly, nên đây không phải là ASCII thuần túy mà là một mẫu byte để phát hiện mã độc.
 
-**Conclusion:** This signature is highly likely used to detect a legacy malware/virus sample associated with .com files, containing the identifier string "Delta v1.0 by Retro", but there is insufficient data to conclude specific behavior.
-	
-<br>
-
-<span style="font-size: 16px; color: #87CEEB">**Translate to Byte Code (Assembly)**</span>
+**Kết luận:** Chữ ký này rất có khả năng được dùng để phát hiện một mẫu mã độc/virus cũ liên quan đến các tệp .com, chứa chuỗi nhận dạng "Delta v1.0 by Retro", nhưng chưa đủ dữ liệu để kết luận về hành vi cụ thể.
 
 <br>
-In the next step, I will extract the remaining **04 signature samples** to translate into byte code using the command:
+
+<span style="font-size: 16px; color: #87CEEB">**Dịch sang Bytecode (Assembly)**</span>
+
+<br>
+Ở bước tiếp theo, mình sẽ trích xuất **04 mẫu chữ ký còn lại** để dịch sang bytecode bằng lệnh:
 
 **grep -h -E '^[^:]+:[0-9]+:[^:]+:[0-9A-Fa-f]+$' main.ndb daily.ndb \ | grep -viE 'trojan|nori|layla' \ | head -n 4 > asm_4.txt**
 
-I use this command to filter out 04 other samples that **do not contain Trojan, and do not contain Nori/Layla**.
+mình dùng lệnh này để lọc ra 04 mẫu khác **không chứa Trojan và không chứa Nori/Layla**.
 
 ![pic19](/assets/img/posts/Yara_ClamAV/pic19.png)
 
 
-Proceed to disassemble into byte code for each type:
+Tiến hành giải mã thành bytecode cho từng loại:
 
 <br>
 **Win.Worm.Gaobot-1**
  
 ![pic20](/assets/img/posts/Yara_ClamAV/pic20.png)
 
-**Meaning of this signature:**
+**Ý nghĩa của chữ ký này:**
 
-When disassembled into assembly, this signature shows **many direct manipulation commands** with **registers** and **memory areas**, for example:
+Khi được giải mã thành assembly, chữ ký này cho thấy **nhiều lệnh thao tác trực tiếp** với **các thanh ghi** và **khu vực bộ nhớ**, chẳng hạn:
 
 **xor al,0x67**
 
@@ -253,14 +252,14 @@ When disassembled into assembly, this signature shows **many direct manipulation
 
 **jnz 0x77**
 
--	`xor al,0x67`: performs an XOR operation on the AL register, potentially related to data processing/transformation. 
--	Commands like `and`, `or`, `sub`, `cmp`: logical operations and data comparisons in memory. 
--	Jump commands like `jz`, `jnc`, `jnz`: indicate conditional branching in the execution flow. 
--	Some bytes are recognized as separate strings like `.com`, `quit`, `cac`, showing that the signature might be capturing a sample containing both machine code bytes and text strings.
+- `xor al,0x67`: thực hiện phép XOR trên thanh ghi AL, có thể liên quan đến xử lý/chuyển đổi dữ liệu. 
+- Các lệnh như `and`, `or`, `sub`, `cmp`: các phép toán logic và so sánh dữ liệu trong bộ nhớ. 
+- Các lệnh nhảy như `jz`, `jnc`, `jnz`: cho thấy việc rẽ nhánh điều kiện trong luồng thực thi. 
+- Một số byte được nhận diện thành các chuỗi riêng như `.com`, `quit`, `cac`, cho thấy chữ ký có thể đang bắt một mẫu chứa cả byte mã máy lẫn chuỗi văn bản.
 
-**Brief Conclusion:**
+**Kết luận ngắn:**
 
-This signature describes a byte pattern containing register manipulation, memory access, and conditional branching instructions. It might be used by **ClamAV** to identify a malware sample based on **byte-level characteristics**, including signs related to `.com` files and disconnected command strings like `quit`.
+Chữ ký này mô tả một mẫu byte chứa thao tác thanh ghi, truy cập bộ nhớ và các lệnh rẽ nhánh điều kiện. Nó có thể được ClamAV dùng để xác định một mẫu mã độc dựa trên **đặc điểm cấp byte**, bao gồm cả các dấu hiệu liên quan đến tệp `.com` và các chuỗi lệnh rời rạc như `quit`.
 
 <br>
 
@@ -268,23 +267,23 @@ This signature describes a byte pattern containing register manipulation, memory
 
 ![pic21](/assets/img/posts/Yara_ClamAV/pic21.png)
  
-**Meaning of this signature:**
+**Ý nghĩa của chữ ký này:**
 
--	**inc ebx, adc, add, xor, sub, and, or**: instructions manipulating data at the **register/memory** level.
+- **inc ebx, adc, add, xor, sub, and, or**: các lệnh thao tác dữ liệu ở mức **thanh ghi/bộ nhớ**.
 
--	**push dword [esp+0x8]**: pushes a parameter onto the stack, potentially related to function calls or data processing.
+- **push dword [esp+0x8]**: đẩy một tham số vào ngăn xếp, có thể liên quan đến gọi hàm hoặc xử lý dữ liệu.
 
--	**test eax,eax + jz:** checks the result in eax, and branches if it is 0.
+- **test eax,eax + jz:** kiểm tra kết quả trong eax, rồi nhảy nếu bằng 0.
 
--	**jmp word 0x8313:**dword 0xee05a19d: a far jump instruction, commonly seen in complex byte patterns or obfuscated code.
+- **jmp word 0x8313:**dword 0xee05a19d: một lệnh nhảy xa, thường thấy trong các mẫu byte phức tạp hoặc mã bị làm rối.
 
--	**int byte 0x78:** triggers an interrupt, potentially an indicator of low-level code or a special byte sequence.
+- **int byte 0x78:** kích hoạt một ngắt, có thể là dấu hiệu của mã cấp thấp hoặc một chuỗi byte đặc biệt.
 
--	**loopne:** conditional loop, showing the capability to iterate over data.
+- **loopne:** vòng lặp điều kiện, cho thấy khả năng lặp qua dữ liệu.
 
-**Brief Conclusion:**
-This signature describes a byte pattern with extensive register, memory, stack manipulations, and conditional branching. It can be used by ClamAV to identify code exhibiting complex data processing or byte-level obfuscation. However, no clear APIs or strings are visible yet, which is insufficient to conclude specific behavior.
-	
+**Kết luận ngắn:**
+Chữ ký này mô tả một mẫu byte với nhiều thao tác trên thanh ghi, bộ nhớ, ngăn xếp và các nhánh điều kiện. Nó có thể được ClamAV dùng để xác định mã có xử lý dữ liệu phức tạp hoặc bị làm rối ở cấp byte. Tuy nhiên, chưa có API hoặc chuỗi rõ ràng nào hiện ra, nên chưa đủ để kết luận về hành vi cụ thể.
+
 <br>
 
 **Vbs.Tool.Svbsvc-1**
@@ -292,23 +291,23 @@ This signature describes a byte pattern with extensive register, memory, stack m
 ![pic22](/assets/img/posts/Yara_ClamAV/pic22.png)
 
 
-**Meaning of this signature:**
+**Ý nghĩa của chữ ký này:**
 
-When disassembled into assembly, this signature shows many register manipulation, comparison, and branching instructions.
+Khi được giải mã thành assembly, chữ ký này cho thấy nhiều lệnh thao tác thanh ghi, so sánh và nhảy điều kiện.
 
-**Key Meanings:**
+**Ý nghĩa chính:**
 
--	**inc, dec, xor, and, sub, cmp:** instructions for data processing and value comparison.
+- **inc, dec, xor, and, sub, cmp:** các lệnh xử lý dữ liệu và so sánh giá trị.
 
--	**jg, jz, jno, jnc, jng:** multiple conditional jump instructions, showing that the pattern features branching.
+- **jg, jz, jno, jnc, jng:** nhiều lệnh nhảy điều kiện, cho thấy mẫu có cấu trúc rẽ nhánh.
 
--	**push, pop, popa:** stack and register manipulations.
+- **push, pop, popa:** thao tác ngăn xếp và thanh ghi.
 
--	**outsb, insd, insb:** low-level I/O instructions, commonly appearing in byte patterns or specialized machine code.
+- **outsb, insd, insb:** các lệnh I/O cấp thấp, thường xuất hiện trong mẫu byte hoặc mã máy chuyên dụng.
 
-**Brief Conclusion:**
+**Kết luận ngắn:**
 
-This signature is a byte pattern with multiple logical, stack, and conditional jump operations. It could be used by ClamAV to identify code that has a complex structure or is modified at the byte level. However, no APIs, URLs, or clear strings are observed, so it is insufficient to infer specific malware behavior.
+Chữ ký này là một mẫu byte với nhiều phép logic, thao tác ngăn xếp và nhảy điều kiện. Nó có thể được ClamAV dùng để xác định mã có cấu trúc phức tạp hoặc bị chỉnh sửa ở cấp byte. Tuy nhiên, không thấy API, URL hay chuỗi rõ ràng nào, nên chưa đủ để suy ra hành vi mã độc cụ thể.
 
 <br>
 
@@ -316,17 +315,17 @@ This signature is a byte pattern with multiple logical, stack, and conditional j
 
 ![pic23](/assets/img/posts/Yara_ClamAV/pic23.png)
  
-**Meaning of this signature:**
+**Ý nghĩa của chữ ký này:**
 
-When decoded, this signature is actually a **Unicode UTF-16LE string**, not pure machine code. Reading it as text, it is roughly:
+Khi giải mã, chữ ký này thực chất là một **chuỗi Unicode UTF-16LE**, không phải mã máy thuần túy. Nếu đọc như văn bản, nó gần như là:
 
 **elseif  ($exists(c:\netol.scr**
 
--	**elseif:** conditional syntax, commonly seen in scripts.
--	**$exists(...):** checks for the existence of a file/path. 
--	**c:\netol.scr:** checks for the **.scr** file in the C drive. A **.scr** file is a screensaver, but it is actually a Windows executable, frequently abused by malware to disguise payloads. 
+- **elseif:** cú pháp điều kiện, thường thấy trong script.
+- **$exists(...):** kiểm tra sự tồn tại của tệp/đường dẫn. 
+- **c:\netol.scr:** kiểm tra tệp **.scr** trên ổ C. Tệp **.scr** là screensaver, nhưng thực chất là tệp thực thi của Windows, thường bị mã độc lợi dụng để che giấu payload.
 
-When passed into **ndisasm**, it was erroneously disassembled into commands like:
+Khi đưa vào **ndisasm**, nó bị giải mã sai thành các lệnh như:
 
 **add [gs:eax+eax+0x73],ch**
 
@@ -334,224 +333,225 @@ When passed into **ndisasm**, it was erroneously disassembled into commands like
 
 **cmp al,[eax]**
 
-These commands have no clear behavioral meaning because ndisasm is misinterpreting the UTF-16LE string as assembly.
+Những lệnh này không có ý nghĩa hành vi rõ ràng vì ndisasm đang hiểu sai chuỗi UTF-16LE thành assembly.
 
-**Brief Conclusion:**
+**Kết luận ngắn:**
 
-This signature is highly likely used to detect a script/malware segment checking for the existence of the file **c:\netol.scr**, where **.scr** is a format easily exploited to conceal malicious executables.
-
-<br>
-
-<span style="font-size: 20px; color: #87CEEB">**Part 2: Writing YARA Rules**</span>
-
+Chữ ký này rất có khả năng được dùng để phát hiện một đoạn script/mã độc kiểm tra sự tồn tại của tệp **c:\netol.scr**, trong đó **.scr** là định dạng dễ bị khai thác để che giấu các tệp thực thi độc hại.
 
 <br>
-To proceed with writing Yara rules, first I needed to install Yara. I ran the following commands to install it:
+
+<span style="font-size: 20px; color: #87CEEB">**Phần 2: Viết quy tắc YARA**</span>
+
+
+<br>
+Để tiến hành viết quy tắc Yara, trước tiên mình cần cài Yara. mình đã chạy các lệnh sau để cài đặt:
 
 **Sudo apt update**
 
 **Sudo apt install git yara -y**
  
-I successfully installed Yara, version 4.5.5
+mình đã cài đặt thành công Yara, phiên bản 4.5.5
 
 
 ![pic25](/assets/img/posts/Yara_ClamAV/pic25.png)
 
 
-Next, I will clone The Zoo repository to my machine:
+Tiếp theo, mình sẽ clone kho lưu trữ The Zoo về máy:
 
 **git clone https://github.com/ytisf/theZoo.git**
  
 ![pic26](/assets/img/posts/Yara_ClamAV/pic26.png)
 
-Next, we come to the important part: writing 10 YARA rules.
+Tiếp theo, chúng ta đến phần quan trọng: viết 10 quy tắc YARA.
 
 <br>
 
-**Rule 1: Identifying PE Files**
+**Quy tắc 1: Xác định các tệp PE**
 
 ![pic27](/assets/img/posts/Yara_ClamAV/pic27.png)
  
-**Explanation:**
+**Giải thích:**
 
--	**Function:** Identifies Windows executable files in PE format.
+- **Chức năng:** Xác định các tệp thực thi Windows ở định dạng PE.
 
--	**Signatures:** PE files usually start with MZ, with a PE header inside.
--	**Match conditions:** $mz must be at the very beginning of the file (offset 0) and $pe must be present.
--	**Significance:** Used to filter files structured as Windows executables.
+- **Chữ ký:** Các tệp PE thường bắt đầu bằng MZ, với một header PE bên trong.
+- **Điều kiện khớp:** $mz phải ở đầu tệp (offset 0) và $pe phải xuất hiện.
+- **Ý nghĩa:** Dùng để lọc các tệp có cấu trúc như tệp thực thi Windows.
 
 <br>
 
-**Rule 2: Identifying Keylogger APIs**
+**Quy tắc 2: Xác định các API keylogger**
 
 ![pic28](/assets/img/posts/Yara_ClamAV/pic28.png)
 
-**Explanation:**
+**Giải thích:**
 
--	**Function:** Detects keylogger indicators.
+- **Chức năng:** Phát hiện các dấu hiệu keylogger.
 
--	**Signatures:** APIs related to keystroke logging and active window tracking.
+- **Chữ ký:** Các API liên quan đến ghi nhận phím và theo dõi cửa sổ đang hoạt động.
 
--	**Match conditions:** At least 2 out of the 3 API strings must appear.
--	**Significance:** If a file utilizes multiple of these APIs, it likely tracks keystrokes/user activities.
+- **Điều kiện khớp:** Ít nhất 2 trong 3 chuỗi API phải xuất hiện.
+- **Ý nghĩa:** Nếu một tệp sử dụng nhiều API này, có khả năng nó đang theo dõi phím và hoạt động của người dùng.
 
 <br>
 
-**Rule 3: Identifying Process Injection APIs**
+**Quy tắc 3: Xác định các API tiêm tiến trình**
 
 ![pic29](/assets/img/posts/Yara_ClamAV/pic29.png)
 
  
-**Explanation:**
+**Giải thích:**
 
--	**Function:** Detects process injection indicators.
+- **Chức năng:** Phát hiện các dấu hiệu tiêm tiến trình.
 
--	**Signatures:** APIs commonly used to open processes, allocate memory, write malicious code into another process, and create remote threads.
+- **Chữ ký:** Các API thường dùng để mở tiến trình, cấp phát bộ nhớ, ghi mã độc vào tiến trình khác và tạo remote thread.
 
--	**Match conditions:** At least 2 APIs must be present.
+- **Điều kiện khớp:** Ít nhất 2 API phải xuất hiện.
 
--	**Significance:** This is a common behavior in malware to hide code inside legitimate processes.
+- **Ý nghĩa:** Đây là hành vi phổ biến của mã độc để ẩn mã trong các tiến trình hợp pháp.
 
 <br>
 
-**Rule 4: Identifying Network Connection APIs**
+**Quy tắc 4: Xác định các API kết nối mạng**
  
 ![pic30](/assets/img/posts/Yara_ClamAV/pic30.png)
 
-**Explanation:**
+**Giải thích:**
 
--	**Function:** Detects files with network communication indicators.
+- **Chức năng:** Phát hiện các tệp có dấu hiệu giao tiếp mạng.
 
--	**Signatures:** APIs used to open Internet connections, send HTTP requests, or download files.
+- **Chữ ký:** Các API dùng để mở kết nối Internet, gửi yêu cầu HTTP hoặc tải tệp xuống.
 
--	**Match conditions:** At least 2 API strings must be present.
+- **Điều kiện khớp:** Ít nhất 2 chuỗi API phải xuất hiện.
 
--	**Significance:** Could be related to payload downloading, C2 communication, or exfiltrating data.
+- **Ý nghĩa:** Có thể liên quan đến việc tải payload, giao tiếp C2 hoặc rò rỉ dữ liệu.
 
 
 <br>
 
-**Rule 5: System Command Execution Indicators**
+**Quy tắc 5: Dấu hiệu thực thi lệnh hệ thống**
  
 ![pic31](/assets/img/posts/Yara_ClamAV/pic31.png)
 
-**Explanation:**
+**Giải thích:**
 
-- **Function:** Identifies system command execution behavior.
+- **Chức năng:** Xác định hành vi thực thi lệnh hệ thống.
 
-- **Signatures:** cmd.exe, powershell, /c, ShellExecute.
+- **Chữ ký:** cmd.exe, powershell, /c, ShellExecute.
 
-- **Match conditions:** Only one of the strings needs to appear.
+- **Điều kiện khớp:** Chỉ cần một trong các chuỗi xuất hiện.
 
-- **Significance:** Malware often uses the command line to run scripts, download files, establish persistence, or execute payloads.
+- **Ý nghĩa:** Mã độc thường dùng dòng lệnh để chạy script, tải tệp, thiết lập tính bền vững hoặc thực thi payload.
 
 <br>
 
-**Rule 6: Identifying Registry Persistence**
+**Quy tắc 6: Xác định tính bền vững qua Registry**
 
 ![pic32](/assets/img/posts/Yara_ClamAV/pic32.png)
  
-**Explanation:**
+**Giải thích:**
 
-- **Function:** Detects persistence indicators via the Registry.
+- **Chức năng:** Phát hiện các dấu hiệu bền vững thông qua Registry.
 
-- **Signatures:** Registry keys like Run, HKCU, HKLM, or Registry writing APIs.
+- **Chữ ký:** Các khóa Registry như Run, HKCU, HKLM, hoặc các API ghi Registry.
 
-- **Match conditions:** At least one string must appear.
+- **Điều kiện khớp:** Ít nhất một chuỗi phải xuất hiện.
 
-- **Significance:** Malware can use the Registry to automatically run after the system boots.
+- **Ý nghĩa:** Mã độc có thể dùng Registry để tự chạy sau khi hệ thống khởi động.
 
 
 <br>
 
-**Rule 7: Identifying High-Entropy, Packed PE Files**
+**Quy tắc 7: Xác định các tệp PE có entropy cao, bị nén**
 
 ![pic33](/assets/img/posts/Yara_ClamAV/pic33.png)
 
-**Explanation:**
+**Giải thích:**
 
--   **Function:** Identifies PE files likely packed or encrypted.
+- **Chức năng:** Xác định các tệp PE có khả năng bị nén hoặc mã hóa.
 
--	**Signatures:** High file-wide entropy.
+- **Chữ ký:** Entropy toàn tệp cao.
 
--	**Match conditions:** The file must be a PE, size > 50KB, and entropy > 7.2.
+- **Điều kiện khớp:** Tệp phải là PE, kích thước > 50KB và entropy > 7.2.
 
--	**Significance:** Packed files typically have high entropy because the data is compressed/encrypted to conceal the real code.
+- **Ý nghĩa:** Các tệp bị nén thường có entropy cao vì dữ liệu được nén/mã hóa để che giấu mã thật.
 
 
 <br>
 
-**Rule 8: Identifying Extensions Often Exploited by Malware**
+**Quy tắc 8: Xác định các phần mở rộng thường bị mã độc khai thác**
 
 ![pic34](/assets/img/posts/Yara_ClamAV/pic34.png)
  
-**Explanation:**
+**Giải thích:**
 
--   **Function:** Identifies file extensions commonly exploited.
+- **Chức năng:** Xác định các phần mở rộng tệp thường bị khai thác.
 
--   **Signatures:** .scr, .vbs, .bat, .ps1, .dll.
+- **Chữ ký:** .scr, .vbs, .bat, .ps1, .dll.
 
--   **Match conditions:** At least 2 extensions must appear.
+- **Điều kiện khớp:** Ít nhất 2 phần mở rộng phải xuất hiện.
 
--   **Significance:** Malware may drop or call auxiliary scripts/executable files to execute malicious behaviors.
+- **Ý nghĩa:** Mã độc có thể tạo hoặc gọi các script/tệp thực thi phụ trợ để thực thi hành vi độc hại.
 
 
 <br>
 
-**Rule 9: Identifying Mutex or Event Strings**
+**Quy tắc 9: Xác định chuỗi mutex hoặc event**
 
 ![pic35](/assets/img/posts/Yara_ClamAV/pic35.png)
  
-**Explanation:**
+**Giải thích:**
 
--	**Function:** Detects mutex/event indicators.
+- **Chức năng:** Phát hiện các dấu hiệu mutex/event.
 
--	**Signatures:** Global\, Local\, CreateMutex, _Event.
+- **Chữ ký:** Global\, Local\, CreateMutex, _Event.
 
--	**Match conditions:** Only one string needs to appear.
+- **Điều kiện khớp:** Chỉ cần một chuỗi xuất hiện.
 
--	**Significance:** Malware often uses a mutex to prevent running multiple instances simultaneously or to mark the machine as infected.
+- **Ý nghĩa:** Mã độc thường dùng mutex để ngăn không cho nhiều phiên bản chạy đồng thời hoặc để đánh dấu máy đã bị nhiễm.
 
 
 
 <br>
 
-**Rule 10: Identifying PE Signatures Where MZ is Not at the File Beginning**
+**Quy tắc 10: Xác định chữ ký PE khi MZ không ở đầu tệp**
 
 ![pic36](/assets/img/posts/Yara_ClamAV/pic36.png)
 
-**Explanation:**
+**Giải thích:**
 
--   **Function:** Identifies files with an embedded PE inside.
+- **Chức năng:** Xác định các tệp có PE được nhúng bên trong.
 
--	**Signatures:** MZ and PE are present, but MZ is not at the beginning of the file.
+- **Chữ ký:** MZ và PE đều có mặt, nhưng MZ không ở đầu tệp.
 
--	**Match conditions:** Both $mz and $pe are present, and $mz is not at offset 0.
+- **Điều kiện khớp:** Cả $mz và $pe đều có mặt, và $mz không ở offset 0.
 
--	**Significance:** The file may contain an embedded PE payload, commonly seen in droppers/loaders.
-
-<br>
-
-**The 10 rules I wrote are designed across various behavioral groups: PE identification, keylogger API, process injection, network API, command execution, registry persistence, high-entropy packed files, suspicious extensions, mutex/event, and embedded PE. While no single rule definitively concludes a file is malicious, they help detect suspicious indicators for static analysis.**
+- **Ý nghĩa:** Tệp có thể chứa một payload PE được nhúng, thường thấy ở các dropper/loader.
 
 <br>
 
-Next, I proceeded to scan the cloned The Zoo directory using the command:
+**10 quy tắc mình viết được thiết kế theo nhiều nhóm hành vi khác nhau: nhận diện PE, API keylogger, tiêm tiến trình, API mạng, thực thi lệnh, bền vững qua Registry, tệp PE có entropy cao, phần mở rộng đáng ngờ, mutex/event và PE được nhúng. Mặc dù không một quy tắc nào có thể kết luận chắc chắn một tệp là độc hại, nhưng chúng giúp phát hiện các dấu hiệu đáng ngờ cho phân tích tĩnh.**
+
+<br>
+
+Tiếp theo, mình tiến hành quét thư mục The Zoo đã clone bằng lệnh:
 
 **yara -r custom_rules.yar theZoo**
 
 ![pic37](/assets/img/posts/Yara_ClamAV/pic37.png) 
  
-As shown in the image above, the rules I wrote matched many malware samples.
+Như hình trên cho thấy, các quy tắc mình viết đã khớp với nhiều mẫu mã độc.
 
-Specifically, the output shows that rules such as **Rule_05_Command_Execution, Rule_08_Suspicious_File_Extensions, Rule_10_Dropped_PE_Inside_File, Rule_01_PE_File, and Rule_06_Registry_Persistence** matched many .zip, .pyd, .db files, as well as files in the .git folder of The Zoo.
+Cụ thể, đầu ra cho thấy các quy tắc như **Rule_05_Command_Execution, Rule_08_Suspicious_File_Extensions, Rule_10_Dropped_PE_Inside_File, Rule_01_PE_File, và Rule_06_Registry_Persistence** đã khớp với nhiều tệp .zip, .pyd, .db, cũng như các tệp trong thư mục .git của The Zoo.
 
 
 <br>
 
+
 **Rule_05_Command_Execution**
 
-This rule matched the most. It detects strings like:
+Quy tắc này khớp nhiều nhất. Nó phát hiện các chuỗi như:
 
 - **cmd.exe**
 
@@ -561,14 +561,15 @@ This rule matched the most. It detects strings like:
 
 - **ShellExecute**
 
-Many malware files in The Zoo contain system command execution indicators, which is why this rule matched numerous samples like **WannaCry_Plus, Petrwrap, Fareit, Zeus, QuasarRAT, PowerLoader**, etc. However, this rule is quite broad and can lead to false positives, as it also matched `theZoo/conf/maldb.db`.
+Nhiều tệp mã độc trong The Zoo chứa các dấu hiệu thực thi lệnh hệ thống, nên quy tắc này đã khớp với nhiều mẫu như **WannaCry_Plus, Petrwrap, Fareit, Zeus, QuasarRAT, PowerLoader**, v.v. Tuy nhiên, quy tắc này khá rộng và có thể gây dương tính giả, vì nó cũng khớp với `theZoo/conf/maldb.db`.
 
 
 <br>
 
+
 **Rule_08_Suspicious_File_Extensions**
 
-This rule detects suspicious file extensions like:
+Quy tắc này phát hiện các phần mở rộng tệp đáng ngờ như:
 
 - **.scr**
 
@@ -580,96 +581,97 @@ This rule detects suspicious file extensions like:
 
 - **.dll**
 
-It matched many malware source files such as **njRAT, LokiRAT, AsyncRAT, QuasarRAT, Carberp**, etc. 
-This is logical because malware source code often contains scripts, DLLs, or extensions used to drop/execute payloads.
+Nó khớp với nhiều tệp nguồn mã độc như **njRAT, LokiRAT, AsyncRAT, QuasarRAT, Carberp**, v.v. 
+Điều này hợp lý vì mã nguồn mã độc thường chứa các script, DLL hoặc phần mở rộng dùng để drop/thực thi payload.
 
 
 <br>
 
+
 **Rule_10_Dropped_PE_Inside_File**
 
-This rule matched with:
+Quy tắc này khớp với:
 
 - **Android.CEREBRUS 2.zip.001**
 
 - **Android.CEREBRUS 2.zip.002**
 
-This rule looks for the presence of **MZ** and **PE** where **MZ** is not at the beginning of the file. This suggests that the file may contain an embedded PE or PE-like data. For the .zip.001/.002 files, it is highly likely that the archives contain a PE payload or a PE-like byte pattern.
+Quy tắc này tìm kiếm sự hiện diện của **MZ** và **PE** trong trường hợp **MZ** không ở đầu tệp. Điều này cho thấy tệp có thể chứa một PE được nhúng hoặc một mẫu byte có dạng PE. Đối với các tệp .zip.001/.002, rất có khả năng các archive này chứa payload PE hoặc một mẫu byte có dạng PE.
 
 <br>
 
 **Rule_01_PE_File**
 
-This rule only matched:
+Quy tắc này chỉ khớp với:
 
 - **theZoo/imports/_rlsetup.pyd**
 
-.pyd is actually a Python extension module on Windows, which typically has a PE structure similar to a .dll. Therefore, matching the PE rule is normal.
+.pyd thực chất là một module extension của Python trên Windows, thường có cấu trúc PE tương tự như .dll. Vì vậy, việc quy tắc PE khớp là bình thường.
 
 <br>
 
 **Rule_06_Registry_Persistence**
 
-This rule matched in:
+Quy tắc này khớp trong:
 
 - **theZoo/.git/objects/pack/...**
 
-This is not a direct malware sample but a Git pack file. This match is likely because the Git object contains source/history content with Registry strings like HKCU, HKLM, or Software\Microsoft\Windows\CurrentVersion\Run. Therefore, this section should be noted as a potential false positive due to scanning the entire .git directory.
+Đây không phải là mẫu mã độc trực tiếp mà là một tệp pack của Git. Sự khớp này có thể là do đối tượng Git chứa nội dung lịch sử/nội dung nguồn với các chuỗi Registry như HKCU, HKLM hoặc Software\Microsoft\Windows\CurrentVersion\Run. Vì vậy, phần này cần được ghi nhận là một dương tính giả tiềm năng do việc quét toàn bộ thư mục .git.
 
 
 <br>
 
-<span style="font-size: 20px; color: #87CEEB">**Part 3: Practical YARA - Unmasking Masquerading Techniques**</span>
+<span style="font-size: 20px; color: #87CEEB">**Phần 3: YARA thực hành - Phát hiện các kỹ thuật giả mạo**</span>
 
 <br>
 
-**Choose scenario A (Extension Spoofing - using magic module) or B (.NET Malware - using dotnet module).**
+**Chọn kịch bản A (Extension Spoofing - dùng module magic) hoặc B (.NET Malware - dùng module dotnet).**
 
-Here, I chose scenario **A Extension Spoofing** to implement.
+Ở đây, mình chọn kịch bản **A Extension Spoofing** để triển khai.
 
-I will create a spoofed file with a `.txt` extension but containing an EXE header.
+mình sẽ tạo một tệp giả mạo có phần mở rộng `.txt` nhưng lại chứa header EXE.
 
 ![pic38](/assets/img/posts/Yara_ClamAV/pic38.png) 
 
  
-The beginning of the file has `4D 5A`, which is the magic byte number of a PE file.
+Đầu tệp có `4D 5A`, đây là số byte ma thuật của tệp PE.
 
 
-Now I will write a Yara rule to detect **extension spoofing**:
+Bây giờ mình sẽ viết một quy tắc Yara để phát hiện **extension spoofing**:
 
 ![pic39](/assets/img/posts/Yara_ClamAV/pic39.png) 
  
-This rule is used to detect **extension spoofing**: the file looks like a `.txt` on the outside, but contains indicators of a Windows executable inside.
+Quy tắc này dùng để phát hiện **extension spoofing**: tệp trông giống như `.txt` bên ngoài, nhưng bên trong chứa các dấu hiệu của một tệp thực thi Windows.
 
--	**$mz = { 4D 5A }**: finds the MZ magic bytes. This indicator usually appears at the beginning of Windows .exe files.
--	**$pe = "PE"**: finds the "PE" string, typically found in the PE header of Windows executables.
--	**condition:** $mz at 0 and $pe: the rule only matches when: 
+- **$mz = { 4D 5A }**: tìm các byte ma thuật MZ. Dấu hiệu này thường xuất hiện ở đầu các tệp .exe Windows.
+- **$pe = "PE"**: tìm chuỗi "PE", thường xuất hiện trong header PE của các tệp thực thi Windows.
+- **condition:** $mz at 0 and $pe: quy tắc chỉ khớp khi: 
 
-	- **MZ** is located at the very beginning of the file (offset 0); 
+- **MZ** nằm ở đầu tệp (offset 0); 
 
-	- and the **PE** string is present in the file.
+- và chuỗi **PE** có mặt trong tệp.
 
 
-**Significance:**
+**Ý nghĩa:**
 
-If a file named `invoice.txt` has content starting with MZ and containing PE, it is not a normal text file. It shows signs of being a Windows executable with a modified extension to deceive the user.
+Nếu một tệp tên là `invoice.txt` có nội dung bắt đầu bằng MZ và chứa PE, thì nó không phải là tệp văn bản bình thường. Nó cho thấy dấu hiệu là một tệp thực thi Windows với phần mở rộng bị sửa đổi để đánh lừa người dùng.
 
-Now I will use this rule to scan the `.txt` file mentioned above:
+Bây giờ mình sẽ dùng quy tắc này để quét tệp `.txt` được nhắc đến ở trên:
 
 **yara spoofing_rule.yar invoice.txt**
 
 ![pic40](/assets/img/posts/Yara_ClamAV/pic40.png) 
  
-**The scan results show that the rule successfully matched the conditions and triggered.**
+**Kết quả quét cho thấy quy tắc đã khớp với điều kiện và kích hoạt thành công.**
 
 <br>
 
-<span style="font-size: 20px; color: #87CEEB">**Part 4: Evaluation and Analysis (Discussion)**</span>
+<span style="font-size: 20px; color: #87CEEB">**Phần 4: Đánh giá và phân tích (Thảo luận)**</span>
 
 <br>
 
-Both **ClamAV** and **YARA** are tools that support signature-based malware detection, but they are used differently. ClamAV is better suited for quick scanning using ready-made databases like **main.ndb, daily.ndb, or custom.ndb**. The advantage of ClamAV is that it is easy to use, comes with a vast database of pre-existing signatures, and requires only running clamscan to detect matching samples. However, ClamAV heavily relies on static signatures, making it easy to evade if the malware alters its byte patterns, packs files, encrypts strings, or obfuscates code.
+Cả **ClamAV** lẫn **YARA** đều là các công cụ hỗ trợ phát hiện mã độc theo kiểu chữ ký, nhưng được dùng theo những cách khác nhau. ClamAV phù hợp hơn cho việc quét nhanh bằng các cơ sở dữ liệu sẵn có như **main.ndb, daily.ndb hoặc custom.ndb**. Điểm mạnh của ClamAV là dễ sử dụng, đi kèm với một cơ sở dữ liệu chữ ký rất lớn và chỉ cần chạy clamscan là có thể phát hiện các mẫu khớp. Tuy nhiên, ClamAV phụ thuộc rất nhiều vào các chữ ký tĩnh, nên rất dễ bị tránh nếu mã độc thay đổi mẫu byte, nén tệp, mã hóa chuỗi hoặc làm rối mã.
 
-YARA is more flexible as analysts can write custom rules based on multiple criteria: strings, hex patterns, APIs, PE headers, entropy, sections, or complex logical conditions. YARA is well-suited for static analysis, hunting malware families, and detecting masquerading techniques like extension spoofing. The disadvantage is that if a rule is written too broadly, it causes false positives, whereas if it is too strict, it can easily miss variant samples.
+YARA linh hoạt hơn vì người phân tích có thể viết các quy tắc tùy chỉnh dựa trên nhiều tiêu chí: chuỗi, mẫu hex, API, header PE, entropy, section hoặc các điều kiện logic phức tạp. YARA phù hợp cho phân tích tĩnh, truy tìm các gia đình mã độc và phát hiện các kỹ thuật giả mạo như extension spoofing. Điểm yếu là nếu quy tắc viết quá rộng thì sẽ gây dương tính giả, còn nếu quá chặt thì dễ bỏ sót các biến thể mẫu.
 
-Against polymorphic techniques, packers, and obfuscation, both tools have their limitations. Therefore, results from ClamAV/YARA should only be regarded as initial indicators, necessitating a combination of in-depth static analysis and dynamic analysis for an accurate conclusion.
+Đối với các kỹ thuật đa hình, packer và obfuscation, cả hai công cụ đều có giới hạn. Vì vậy, kết quả từ ClamAV/YARA chỉ nên được xem là các chỉ báo ban đầu, cần kết hợp với phân tích tĩnh chuyên sâu và phân tích động để có kết luận chính xác.
