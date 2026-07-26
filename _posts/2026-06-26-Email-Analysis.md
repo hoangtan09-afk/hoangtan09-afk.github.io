@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Email Header Analysis - Tryhackme"
 date: 2026-06-26 00:00:00 +07000
 categories: [Email Analysis]
@@ -72,11 +72,11 @@ There are many tools available for analyzing **email headers**, such as **Messag
 
 After viewing the source, select all the content in the **email source** and paste it into **mxtoolbox**.
 
-![](/assets/img/posts/2026-06-27-09-37-05.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-37-05.png)
 
 Scroll down to the **Relay Information** section and pay attention to the first line in the **From** column.
 
-![](/assets/img/posts/2026-06-27-09-37-35.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-37-35.png)
 
 This line contains the origin IP address we need: **192.119.71.157**
 
@@ -116,13 +116,13 @@ When analyzing email headers, checking the SPF record of the domain in the **Ret
 
 SPF works by having the domain publish a list of servers/IPs authorized to send email. When a message is received, the system obtains the domain from the Return-Path and compares it with the SPF record.
 
-![](/assets/img/posts/2026-06-27-00-01-14.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-00-01-14.png)
 
 Here, the domain in the Return-Path is **mutawamarine.com**.
 
 I used the built-in tool **SPF surveyvor** to view the SPF record for this domain.
 
-![](/assets/img/posts/2026-06-27-00-01-38.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-00-01-38.png)
 
 For example, this record means that the domain only allows **Microsoft 365/Outlook** to send valid email, and all other sources are considered invalid **(-all)**.
 
@@ -136,7 +136,7 @@ DMARC (Domain-based Message Authentication, Reporting & Conformance) is a mechan
 
 For the domain:
 
-![](/assets/img/posts/2026-06-27-00-02-32.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-00-02-32.png)
 
 **v=DMARC1; p=quarantine; fo=1**
 
@@ -151,9 +151,9 @@ This can be interpreted as follows:
 
 This email has an attachment that we can download and inspect for its hash.
 
-![](/assets/img/posts/2026-06-27-09-38-52.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-38-52.png)
 
-![](/assets/img/posts/2026-06-27-09-39-30.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-39-30.png)
 
 The file is named: **SWT_#09674321____PDF__.CAB**
 
@@ -163,7 +163,7 @@ The file is named: **SWT_#09674321____PDF__.CAB**
 
 We can determine the hash by using the **sha256sum** command in Linux.
 
-![](/assets/img/posts/2026-06-27-09-40-42.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-40-42.png)
 
 Hash: **2e91c533615a9bb8929ac4bb76707b2444597ce063d84a4b33525e25074fff3f**
 
@@ -175,13 +175,13 @@ To determine how many KB the file is, we can use a threat intelligence platform 
 
 Not only does it show file size, but it also provides other details such as malware family, dropped files, and behavior.
 
-![](/assets/img/posts/2026-06-27-09-35-05.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-35-05.png)
 
 VirusTotal results show the .CAB file was flagged as malware by 50/63 security vendors. It is labeled with malware families such as **msil, loki, agensla**.
 
 To find the file size as requested by the question, go to the **Details** tab.
 
-![](/assets/img/posts/2026-06-27-09-35-45.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-35-45.png)
 
 So the file size is: **400.26 KB**
 
@@ -191,7 +191,7 @@ So the file size is: **400.26 KB**
 
 Based on the image above, note that the **File Type** field lists **RAR**.
 
-![](/assets/img/posts/2026-06-27-09-41-45.png)
+![](/assets/img/posts/2026-06-26-Email-Analysis/2026-06-27-09-41-45.png)
 
 So the actual file type is **.RAR**, not .CAB as initially assumed.
 
