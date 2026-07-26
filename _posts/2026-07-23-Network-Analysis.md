@@ -9,13 +9,16 @@ categories: [Network Analysis]
 
 A SOC Analyst at Umbrella Corporation is going through SIEM alerts and sees an alert for connections to a known malicious domain. The traffic is coming from Sara’s computer, an accountant who receives a large volume of emails from customers every day. Looking at the email gateway logs for Sara’s mailbox, there is nothing immediately suspicious, as the emails appear to be coming from customers. Sara is contacted via her phone, and she says that a customer sent her an invoice that contained a document with a macro. She opened the email, and the program crashed. The SOC team then retrieved a PCAP for further analysis.
 
-![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-23-22-48-16.png)
+![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-26-16-01-18.png)
 
 <br>
 
-Welcome to this topic on network traffic analysis during a malware compromise incident. In this lab exercise, we will examine a PCAP file to trace the suspicious indicators after a macro-enabled document was opened on the victim machine. The ultimate goal is to reconstruct the infection chain, identify as many IOCs as possible, and draw a clear, evidence-based conclusion about how the malware operated in the system.
+> Welcome to this topic on network traffic analysis during a malware compromise incident. In this lab exercise, we will examine a PCAP file to trace the suspicious indicators after a macro-enabled document was opened on the victim machine. The ultimate goal is to reconstruct the infection chain, identify as many IOCs as possible, and draw a clear, evidence-based conclusion about how the malware operated in the system.
+>
+> The main tool used throughout this exercise is **Wireshark**.
+{: .prompt-info }
 
-The main tool used throughout this exercise is **Wireshark**.
+
 
 <br>
 
