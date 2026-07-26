@@ -6,70 +6,65 @@ categories: [CTF]
 ---
 
 **Description:**
-Jacky is not very knowledgable about the best security passwords and used a simple password to encrypt their BitLocker drive. See if you can break through the encryption!
+Jacky is not very knowledgeable about strong security passwords and used a simple password to encrypt their BitLocker drive. See if you can break through the encryption!
 
 =======================================================================================
 
-
-
 ![pic1](/assets/img/posts/Bitlocker/pic1.png)
 
-File được cung cấp: Một file image đĩa thô (bitlocker-1.dd)
+File provided: a raw disk image (bitlocker-1.dd)
 
-**Bước 1: Xác định Image**
+**Step 1: Identify the image**
 
 ![pic2](/assets/img/posts/Bitlocker/pic2.png)
 
-Kết quả cho thấy đây là phân vùng boot sector DOS/MBR chứa phân vùng BitLocker. Vì BitLocker là công nghệ mã hóa độc quyền của Windows, nên không thể mount bình thường bằng Linux nếu không có đúng key hoặc password.
+The result shows that this is a DOS/MBR boot sector containing a BitLocker partition. Because BitLocker is a proprietary Windows encryption technology, it cannot be mounted normally on Linux without the correct key or password.
 
+**Step 2: Extract the password hash**
 
+Based on the hint “hash cracking”, I used the bitlocker2john tool from John the Ripper to extract the password hash (recovery/user password) from the metadata of the .dd file.
 
-**Bước 2: Trích xuất Hash Password**
-
-Theo gợi ý “hash cracking”, mình đã sử dụng công cụ bitlocker2john trong bộ John the Ripper để trích xuất hash password (recovery/user password) từ metadata của file .dd.
- 
 ![pic3](/assets/img/posts/Bitlocker/pic3.png)
 
-Kết quả tạo ra một chuỗi hash bắt đầu bằng $bitlocker$1$...
+The result produced a hash string beginning with $bitlocker$1$...
 
 ![pic4](/assets/img/posts/Bitlocker/pic4.png)
- 
-**Bước 3: Crack Hash**
 
-Với file hash đã trích xuất (bitlocker_hash.txt), mình sử dụng John the Ripper thực hiện tấn công từ điển bằng wordlist rockyou.txt tiêu chuẩn.
+**Step 3: Crack the hash**
+
+With the extracted hash file (bitlocker_hash.txt), I used John the Ripper to perform a dictionary attack using the standard rockyou.txt wordlist.
 
 ![pic5](/assets/img/posts/Bitlocker/pic5.png)
 
-Kết quả: John đã crack thành công password: Jacqueline
+Result: John successfully cracked the password: Jacqueline
 
-**Bước 4: Giải mã Volume**
+**Step 4: Decrypt the volume**
 
-Để truy cập dữ liệu đã mã hóa trên Linux, mình sử dụng công cụ Dislocker. Quá trình mount cần thực hiện 2 bước riêng biệt: lớp giải mã và lớp filesystem.
+To access the encrypted data on Linux, I used Dislocker. The mount process requires two separate steps: the decryption layer and the filesystem layer.
 
 ![pic6](/assets/img/posts/Bitlocker/pic6.png)
 
-Mở khóa lớp BitLocker:
+Unlock the BitLocker layer:
 
-Sử dụng password đã crack để tạo ra file ảo đã được giải mã.
+Use the cracked password to create a decrypted virtual file.
 
 ![pic7](/assets/img/posts/Bitlocker/pic7.png)
- 
-Kết quả tạo ra file ảo: ~/mnt_bitlocker/dislocker-file
 
-**Bước 5: Mount Filesystem**
+This produced the virtual file: ~/mnt_bitlocker/dislocker-file
 
-File dislocker-file là một phân vùng NTFS thô. Mình mount nó vào thư mục thứ hai để xem được các file thực tế.
- 
+**Step 5: Mount the filesystem**
+
+The dislocker-file is a raw NTFS partition. I mounted it into a second directory to view the actual files.
+
 ![pic8](/assets/img/posts/Bitlocker/pic8.png)
 ![pic9](/assets/img/posts/Bitlocker/pic9.png)
 
+**Conclusion & logic**
 
-**Kết luận & Logic**
+This challenge tests the combination of disk forensics (extracting hidden hashes) and cryptography (cracking password-based encryption).
 
-Challenge này kiểm tra khả năng kết hợp forensics đĩa (trích xuất hash ẩn) với cryptography (crack password-based encryption).
+The key lesson is the “two-directory” mounting logic:
 
-Bài học quan trọng là logic mount “hai thư mục”:
+• The first directory contains the decrypted data stream (the virtual file).
 
-•	Thư mục thứ nhất chứa luồng dữ liệu đã giải mã (virtual file).
-
-•	Thư mục thứ hai parse luồng đó thành filesystem có thể đọc được (các file thực tế).
+• The second directory parses that stream into a readable filesystem (the real files).

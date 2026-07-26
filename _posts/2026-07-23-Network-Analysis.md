@@ -1,4 +1,4 @@
----
+﻿---
 title: "Network Analysis – Malware Compromise"
 date: 2026-07-23 00:00:00 +07000
 categories: [Network Analysis]
@@ -7,75 +7,75 @@ categories: [Network Analysis]
 
 ## Scenario
 
-A SOC Analyst at Umbrella Corporation is going through SIEM alerts and sees the alert for connections to a known malicious domain. The traffic is coming from Sara’s computer, an Accountant who receives a large volume of emails from customers daily. Looking at the email gateway logs for Sara’s mailbox there is nothing immediately suspicious, with emails coming from customers. Sara is contacted via her phone and she states a customer sent her an invoice that had a document with a macro, she opened the email and the program crashed. The SOC Team retrieved a PCAP for further analysis.
-
+A SOC Analyst at Umbrella Corporation is going through SIEM alerts and sees an alert for connections to a known malicious domain. The traffic is coming from Sara’s computer, an accountant who receives a large volume of emails from customers every day. Looking at the email gateway logs for Sara’s mailbox, there is nothing immediately suspicious, as the emails appear to be coming from customers. Sara is contacted via her phone, and she says that a customer sent her an invoice that contained a document with a macro. She opened the email, and the program crashed. The SOC team then retrieved a PCAP for further analysis.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-23-22-48-16.png)
 
 <br>
 
-Chào mừng bạn đọc đến với chủ đề phân tích lưu lượng mạng trong một sự cố nghi nhiễm mã độc. Ở bài thực hành này, chúng ta sẽ cùng mổ xẻ một file PCAP để lần theo các dấu hiệu bất thường sau khi một tài liệu có macro được mở trên máy nạn nhân. Mục tiêu cuối cùng là truy vết được luồng lây nhiễm, xác định càng nhiều IOC càng tốt, và từ đó đưa ra một kết luận rõ ràng, có cơ sở về hoạt động của mã độc trong hệ thống.
+Welcome to this topic on network traffic analysis during a malware compromise incident. In this lab exercise, we will examine a PCAP file to trace the suspicious indicators after a macro-enabled document was opened on the victim machine. The ultimate goal is to reconstruct the infection chain, identify as many IOCs as possible, and draw a clear, evidence-based conclusion about how the malware operated in the system.
 
-Công cụ chính được sử dụng xuyên suốt bài này là **Wireshark**
+The main tool used throughout this exercise is **Wireshark**.
 
 <br>
 
-Sau khi mở file PCAP với Wireshark, trông nó sẽ
+After opening the PCAP file in Wireshark, it will look like this:
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-23-22-49-47.png)
 
-Thông thường những ai chưa quen với công cụ này sẽ thấy “ngợp” vì không biết phải đọc gì tiếp theo. Mình có một tip mỗi khi phân tích bằng Wireshark là dùng tính năng Protocol Hierarchy để cho biết toàn bộ các giao thức xuất hiện trong file PCAP, kèm theo số lượng packet, dung lượng byte và tỷ trọng của từng loại traffic.
+Typically, people who are unfamiliar with this tool may feel overwhelmed because they do not know what to read next. One tip I always use when analyzing with Wireshark is the Protocol Hierarchy feature, which shows all the protocols present in the PCAP file, along with the number of packets, byte size, and the proportion of each traffic type.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-23-22-53-02.png)
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-23-22-53-17.png)
 
-Nói đơn giản, thay vì nhìn vào hàng nghìn dòng packet một cách rời rạc, Protocol Hierarchy giúp mình có một bức tranh tổng quan trước: trong file này có DNS không, có HTTP không, có TLS không, có SMB hay các giao thức bất thường nào không. Từ đó, mình sẽ biết nên bắt đầu điều tra từ đâu và ưu tiên loại traffic nào trước.
+In simple terms, instead of looking at thousands of packets in isolation, Protocol Hierarchy gives us a broad overview first: does this file contain DNS traffic, HTTP, TLS, SMB, or any unusual protocols? From there, we can determine where to start the investigation and which traffic to prioritize.
 
-Chẳng hạn ở đây, mình sẽ bắt đầu với Data. **Chuộc phải > Apply as Filter > Selected**
+In this case, I will start with the Data section.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-23-22-56-20.png)
 
-Phần Data cho biết trong file PCAP có những gói tin chứa dữ liệu payload mà Wireshark không tự phân tích sâu hơn thành một giao thức cụ thể như HTTP, DNS hay TLS. Nói cách khác, đây có thể là những đoạn dữ liệu thô được truyền qua TCP/UDP, hoặc là nội dung mà Wireshark chưa nhận diện được rõ ràng.
+The Data section shows that the PCAP contains packets with payload data that Wireshark does not further dissect into a specific protocol such as HTTP, DNS, or TLS. In other words, these may be raw data chunks transmitted over TCP/UDP, or content that Wireshark has not clearly identified.
 
-Trong quá trình phân tích mã độc, mình thường không bỏ qua phần này, vì đôi khi các payload đáng nghi, dữ liệu tải xuống, hoặc nội dung giao tiếp với C2 có thể nằm trong những packet dạng Data như vậy. Việc filter riêng phần này giúp thu hẹp phạm vi quan sát, thay vì phải nhìn toàn bộ hàng nghìn packet trong capture.
+During malware analysis, I usually do not ignore this section, because suspicious payloads, downloaded content, or C2 communication can sometimes appear inside Data packets. Filtering this section helps narrow the scope of observation, rather than forcing us to inspect the entire set of thousands of packets in the capture.
 
 <br>
 
-## Xác định điểm khởi đầu lây nhiễm
+## Identifying the starting point of the infection
 
 <br>
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-23-23-01-36.png)
 
-Sau khi Apply as Filter, mình thấy chỉ có một packet xuất hiện. Mình tiến hành **Follow Stream** để xem được toàn bộ cuộc trò chuyện giữa các packet rõ ràng hơn
+After applying the filter, I saw that only one packet remained. I then used **Follow Stream** to view the full conversation between the packets more clearly.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-23-23-03-02.png)
 
-Ngay khi mở Follow HTTP Stream, có một điểm rất đáng chú ý: máy nội bộ đã gửi request đến domain **kychenogg.com** để tải về một file có tên **spet10.spr**.
+As soon as I opened Follow HTTP Stream, one detail stood out immediately: the internal host had sent a request to the domain **kychenogg.com** to download a file named **spet10.spr**.
 
 ```http
 GET /QIC/tewokl.php?l=spet10.spr HTTP/1.1
 Host: kychenogg.com
 ```
 
-Ở phía server, response trả về trạng thái **HTTP/1.1 200 OK**, nghĩa là request đã thành công và file đã được tải xuống. Phần header cũng cho biết server đang trả về một file đính kèm:
+On the server side, the response returned **HTTP/1.1 200 OK**, meaning the request was successful and the file was downloaded. The headers also indicate that the server was returning an attachment:
 
 ```http
 Content-Disposition: attachment; filename="spet10.spr"
 Content-Type: application/octet-stream
 Content-Length: 261120
 ```
-Điểm thú vị nằm ở phần nội dung bên dưới. Dù file được đặt tên với extension .spr, phần đầu của payload lại bắt đầu bằng chuỗi:
+
+The interesting part is the content below. Although the file was named with the extension .spr, the beginning of the payload starts with:
 
 ```bash
 MZ
 This program cannot be run in DOS mode.
 ```
 
-Đây là dấu hiệu rất quen thuộc của một file **Windows executable / PE file**. Nói cách khác, file **spet10.spr** không đơn thuần là một file dữ liệu bình thường, mà nhiều khả năng là một file thực thi Windows được ngụy trang bằng phần mở rộng khác.
+This is a very familiar signature of a **Windows executable / PE file**. In other words, **spet10.spr** is not simply an ordinary data file; it is very likely a Windows executable disguised with a different extension.
 
-Đến đây, mình có thể ghi nhận một IOC khá rõ:
+At this point, I can record a fairly clear IOC:
 
 ```bash
 Suspicious domain: kychenogg.com
@@ -87,9 +87,9 @@ Content-Length: 261120 bytes
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-09-27-15.png)
 
-Mình nhận thấy IP 10.11.27.101 chủ động kết nối đến 95.181.198.231, sau đó gửi yêu cầu để tải xuống file **spet10.spr**. Mình nghi ngờ địa chỉ 10.11.27.101 là **victim** và 95.181.198.231 là **server** phân phối payload
+I noticed that IP 10.11.27.101 actively connected to 95.181.198.231 and then sent a request to download the file **spet10.spr**. I suspected that 10.11.27.101 was the **victim** and 95.181.198.231 was the **payload delivery server**.
 
-Điều này được thể hiện khá rõ qua quá trình bắt tay TCP ban đầu:
+This became quite clear through the initial TCP handshake:
 
 ```bash
 10.11.27.101      → 95.181.198.231    SYN
@@ -97,43 +97,43 @@ Mình nhận thấy IP 10.11.27.101 chủ động kết nối đến 95.181.198.
 10.11.27.101      → 95.181.198.231    ACK
 ```
 
-Chi tiết này rất quan trọng vì nó cho thấy đây không chỉ là một kết nối ngẫu nhiên đến IP ngoài, mà là một hành động có mục đích: **truy cập vào một đường dẫn cụ thể để tải xuống một file cụ thể**. Kết hợp với phần Follow HTTP Stream ở trên, file spet10.spr có header MZ, dấu hiệu đặc trưng của một file thực thi Windows PE.
+This detail is very important because it shows that this was not just a random connection to an external IP, but a deliberate action: **accessing a specific path to download a specific file**. Combined with the Follow HTTP Stream above, the file spet10.spr had an MZ header, which is a characteristic signature of a Windows PE executable.
 
-Từ đây, mình có thể dựng được một phần của chuỗi lây nhiễm như sau:
+From here, I can reconstruct part of the infection chain as follows:
 
 ```bash
 Victim: 10.11.27.101
         ↓
-Kết nối đến 95.181.198.231 qua HTTP port 80
+Connected to 95.181.198.231 over HTTP port 80
         ↓
-Gửi request đến domain kychenogg.com
+Sent a request to the domain kychenogg.com
         ↓
-Tải xuống file spet10.spr
+Downloaded the file spet10.spr
         ↓
-File tải về có dấu hiệu là Windows executable
+The downloaded file showed signs of being a Windows executable
 ```
 
 <br>
 
-Tiếp theo, mình thử filter Wireshark như sau:
+Next, I tried filtering in Wireshark as follows:
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-09-38-04.png)
 
-Ở bước này, mình dùng filter `http.request.method` để liệt kê toàn bộ các HTTP request có trong file PCAP. Cách này giúp mình nhìn nhanh xem victim đã gửi request đến những domain/IP nào, truy cập URI nào, và có request nào bất thường hay không.
+In this step, I used the filter `http.request.method` to list all HTTP requests in the PCAP file. This helped me quickly see which domains/IPs the victim had contacted, which URIs it accessed, and whether any requests looked suspicious.
 
-Có thể thấy ngoài request tải file `spet10.spr` từ `kychenogg.com`, máy `10.11.27.101` còn gửi nhiều request đến domain `cochrimato.com`. Đáng chú ý là một số request truy cập vào đường dẫn bắt đầu bằng `/images/`, nhưng phần phía sau lại là những chuỗi rất dài, khó đọc và không giống tên file ảnh thông thường.
+It was clear that, in addition to the request to download `spet10.spr` from `kychenogg.com`, host `10.11.27.101` also sent many requests to the domain `cochrimato.com`. Some of these requests accessed paths starting with `/images/`, but the portion after that was a long, hard-to-read string that did not look like a typical image file name.
 
-Điều này khiến mình nghi ngờ rằng đây không đơn thuần là request tải ảnh, mà có thể là một dạng **encoded data** hoặc request được malware tạo ra để giao tiếp với server. Vì vậy, mình quyết định lần theo stream này bằng **Follow HTTP Stream** để xem toàn bộ nội dung trao đổi giữa client và server.
+This made me suspect that this was not simply an image download request, but could be **encoded data** or a request generated by malware to communicate with a server. For that reason, I decided to follow this stream using **Follow HTTP Stream** to view the full contents of the exchange between the client and the server.
 
 <br>
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-09-39-36.png)
 
-Khi mở stream, ta thấy request được gửi đến host `cochrimato.com` với URI rất dài nằm dưới thư mục /images/. Phần request header cho thấy đây là một HTTP GET request khá giống traffic trình duyệt thông thường, bao gồm `User-Agent`, `Accept`, `Accept-Language`, `Accept-Encoding` và `Cookie`.
+When I opened the stream, I saw that requests were being sent to host `cochrimato.com` with a very long URI under the `/images/` directory. The request headers showed that this was an HTTP GET request that looked fairly similar to normal browser traffic, including `User-Agent`, `Accept`, `Accept-Language`, `Accept-Encoding`, and `Cookie`.
 
-Tuy nhiên, điểm đáng nghi nằm ở chính URI. Một đường dẫn trong thư mục `/images/` nhưng lại chứa chuỗi dài bất thường có thể là dấu hiệu malware đang cố ngụy trang traffic C2 thành request web hợp lệ. Nói cách khác, malware có thể đang tận dụng HTTP GET request để gửi dữ liệu hoặc nhận phản hồi từ server điều khiển.
+However, the suspicious part was the URI itself. A path under the `/images/` directory that contained a long, unusual string could be a sign that malware was trying to disguise C2 traffic as legitimate web traffic. In other words, the malware may have been exploiting HTTP GET requests to send data or receive responses from a controlling server.
 
-Ở phía server, response trả về `HTTP/1.1 200 OK`, đồng thời có các header như:
+On the server side, the response returned `HTTP/1.1 200 OK` and included headers such as:
 
 ```bash
 Server: Apache/2.2.22 (Debian)
@@ -143,9 +143,9 @@ Content-Type: text/html
 Transfer-Encoding: chunked
 ```
 
-Điều này cho thấy phía server đang chạy PHP và có tạo session cho client. Trong bối cảnh phân tích malware, đây là một chi tiết cần lưu ý vì nhiều C2 panel hoặc gate độc hại có thể được triển khai trên web server PHP.
+This indicates that the server was running PHP and had created a session for the client. In the context of malware analysis, this is an important detail because many malicious C2 panels or gateways can be deployed on PHP web servers.
 
-Từ stream này, mình chưa vội kết luận ngay đây chắc chắn là C2, nhưng có thể ghi nhận một số dấu hiệu đáng nghi:
+From this stream, I would not yet conclude that this was definitely a C2 channel, but I could record several suspicious indicators:
 
 ```bash
 Victim IP: 10.11.27.101
@@ -160,31 +160,31 @@ Cookie observed: PHPSESSID
 
 <br>
 
-## Phân tích hoạt động tải xuống mã độc thứ cấp sau khi nhiễm Ursnif
+## Analyzing secondary malware download activity after the Ursnif infection
 
 <br>
 
-Sau khi đã xác định được máy `10.11.27.101` có hành vi tải xuống một file đáng ngờ từ `kychenogg.com`, mình tiếp tục mở rộng quá trình điều tra sang các **HTTP request** khác trong file **PCAP**. Ở giai đoạn này, trọng tâm không còn chỉ là tìm payload ban đầu, mà là xem sau khi bị nhiễm, máy nạn nhân có tiếp tục tải thêm thành phần mã độc nào khác hay không.
+After identifying that host `10.11.27.101` had downloaded a suspicious file from `kychenogg.com`, I expanded the investigation to other **HTTP requests** in the **PCAP** file. At this stage, the focus was no longer only on finding the initial payload, but on determining whether the victim host continued to download additional malicious components after infection.
 
-Trong nhiều chiến dịch thực tế, mã độc ban đầu không phải lúc nào cũng là payload cuối cùng. Một malware như Ursnif có thể đóng vai trò **initial foothold** hoặc **loader**, sau đó kết nối ra ngoài để tải thêm mã độc khác như **Dridex**. Vì vậy, mình sẽ tiếp tục quan sát các request HTTP để tìm dấu hiệu của hoạt động **follow-up malware download.**
+In many real-world campaigns, the initial malware is not always the final payload. A malware family such as Ursnif can act as an **initial foothold** or **loader**, and then reach out to download additional malware such as **Dridex**. For that reason, I continued to inspect the HTTP requests for signs of **follow-up malware download** activity.
 
-Đầu tiên, mình dùng filter:
+First, I used the filter:
 
 ```bash
 http.request.method
 ```
 
-Filter này giúp hiển thị toàn bộ các request HTTP được gửi đi từ máy nạn nhân. Khi quan sát danh sách packet, mình nhận thấy có một request rất đáng chú ý: máy `10.11.27.101` gửi request đến `95.181.198.231` để tải một file có đuôi `.rar`.
+This filter displays all HTTP requests sent by the victim host. While reviewing the packet list, I noticed one very suspicious request: host `10.11.27.101` sent a request to `95.181.198.231` to download a file with the `.rar` extension.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-10-04-55.png)
 
-Chi tiết này ngay lập tức đáng nghi vì trước đó `95.181.198.231` đã từng xuất hiện trong hoạt động tải xuống payload ban đầu. Việc cùng một server tiếp tục được sử dụng để phân phối thêm một file `.rar` khiến mình nghi ngờ đây không phải là traffic bình thường, mà có thể là một phần trong chuỗi tải mã độc nhiều giai đoạn.
+This was immediately suspicious because `95.181.198.231` had already appeared in the initial payload download activity. Using the same server to distribute an additional `.rar` file made me suspect that this was not ordinary traffic, but part of a multi-stage malware delivery chain.
 
-Để xác minh rõ hơn, mình tiến hành **Follow HTTP Stream** đối với packet này
+To verify this more clearly, I performed **Follow HTTP Stream** on this packet.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-10-08-18.png)
 
-Trong stream, có thể thấy request được gửi trực tiếp đến địa chỉ IP `95.181.198.231`, không thông qua domain:
+In the stream, the request could be seen being sent directly to IP `95.181.198.231`, without using a domain:
 
 ```bash
 GET /oiioiashdqbwe.rar HTTP/1.1
@@ -194,7 +194,7 @@ Connection: Keep-Alive
 Cache-Control: no-cache
 ```
 
-Phía server phản hồi với trạng thái:
+The server responded with:
 
 ```bash
 HTTP/1.1 200 OK
@@ -202,30 +202,29 @@ Content-Length: 254019
 Content-Type: application/rar
 ```
 
-Response `200 OK` cho thấy file đã được server trả về thành công. Bên cạnh đó, trường Content-Type là `application/rar`, xác nhận object được tải xuống là một file dạng RAR archive. Trong bối cảnh trước đó máy nạn nhân đã có hành vi tải file đáng ngờ, file `.rar` này rất có khả năng là **follow-up payload** được tải về sau khi quá trình lây nhiễm ban đầu đã diễn ra.
+The `200 OK` response showed that the file had been returned successfully. In addition, the `Content-Type: application/rar` field confirmed that the downloaded object was an RAR archive. In the context of the earlier suspicious download behavior, this `.rar` file was very likely a **follow-up payload** downloaded after the initial infection stage had already occurred.
 
-Tại đây, mình có thể nối các mảnh ghép lại với nhau:
+At this point, I could connect the pieces together:
 
 ```bash
 Victim host: 10.11.27.101
         ↓
-Initial suspicious download từ kychenogg.com / 95.181.198.231
+Initial suspicious download from kychenogg.com / 95.181.198.231
         ↓
-Host tiếp tục gửi HTTP GET request đến 95.181.198.231
+The host continued to send an HTTP GET request to 95.181.198.231
         ↓
-Tải xuống file oiioiashdqbwe.rar
+Downloaded the file oiioiashdqbwe.rar
         ↓
-File được trả về với Content-Type: application/rar
+The file was returned with Content-Type: application/rar
 ```
 
-Điểm quan trọng là `95.181.198.231` không chỉ xuất hiện một lần. IP này đã xuất hiện trong giai đoạn tải file ban đầu, rồi tiếp tục xuất hiện trong request tải file `.rar`. Điều này củng cố giả thuyết rằng đây là một malware delivery server, tức server được dùng để phân phối các payload trong nhiều bước khác nhau của infection chain.
+The important point is that `95.181.198.231` did not appear only once. It had appeared during the initial file download stage and then appeared again in the `.rar` download request. This strengthens the hypothesis that it was a malware delivery server used to distribute payloads across multiple stages of the infection chain.
 
-Về mặt ngữ cảnh mã độc, **Ursnif** thường được biết đến như một banking **trojan / infostealer**, có khả năng đánh cắp thông tin đăng nhập, dữ liệu trình duyệt và thông tin tài chính. Trong một số chiến dịch, sau khi đã có foothold trên máy nạn nhân, nó có thể tải thêm payload khác về hệ thống.
+From a malware context, **Ursnif** is commonly known as a banking **trojan / infostealer** capable of stealing login credentials, browser data, and financial information. In some campaigns, after establishing a foothold on the victim machine, it can download additional payloads onto the system.
 
-Còn **Dridex** cũng là một **banking trojan**, nhưng thường được xem là một mã độc nguy hiểm hơn ở giai đoạn sau, có thể phục vụ cho **credential theft**, **C2 communication**, hoặc mở đường cho các hoạt động tấn công tiếp theo. Vì vậy, nếu **Ursnif** đóng vai trò mã độc ban đầu, thì **Dridex** có thể là **follow-up malware** được tải xuống để mở rộng mức độ kiểm soát của attacker trên máy nạn nhân.
+**Dridex** is also a **banking trojan**, but it is often considered more dangerous at a later stage, as it may be used for **credential theft**, **C2 communication**, or to pave the way for subsequent attack activities. Therefore, if **Ursnif** was the initial malware, **Dridex** could be the **follow-up malware** downloaded to expand the attacker’s control over the victim machine.
 
-
-Dựa trên request và response trong stream, mình có thể xác định URL đầy đủ mà máy nạn nhân đã dùng để tải file `.rar` là:
+Based on the request and response in the stream, I could identify the full URL used by the victim host to download the `.rar` file as:
 
 ```bash
 http://95.181.198.231/oiioiashdqbwe.rar
@@ -233,19 +232,19 @@ http://95.181.198.231/oiioiashdqbwe.rar
 
 <br>
 
-## Phân tích **Dridex post-infection traffic** và xác định **C2 IP**
+## Analyzing Dridex post-infection traffic and identifying the C2 IP
 
-Sau khi xác định được file `oiioiashdqbwe.rar` được tải xuống từ `95.181.198.231`, mình tiếp tục chuyển sang giai đoạn phân tích các kết nối xuất hiện sau thời điểm này. Đây là phần khá quan trọng, vì sau khi **follow-up malware** được tải về, máy nạn nhân có thể bắt đầu giao tiếp với các máy chủ điều khiển bên ngoài.
+After identifying that the file `oiioiashdqbwe.rar` had been downloaded from `95.181.198.231`, I moved on to analyzing the connections that appeared after that point. This was an important step, because once the **follow-up malware** was downloaded, the victim host might start communicating with external control servers.
 
-Ở bước này, mình vào **Statistics > Endpoints** trong Wireshark để quan sát toàn bộ các địa chỉ IP xuất hiện trong file `PCAP`. Mục tiêu là tìm xem sau giai đoạn tải payload, host `10.11.27.101` có tiếp tục kết nối đến những IP đáng ngờ nào hay không.
+At this stage, I opened **Statistics > Endpoints** in Wireshark to inspect all IP addresses present in the `PCAP` file. The goal was to see whether, after the payload download stage, host `10.11.27.101` continued to connect to any suspicious IPs.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-11-34-17.png)
 
-Trong danh sách endpoint, mình nhận thấy có một địa chỉ IP bắt đầu bằng `185.` là `185.244.150.230`. Đây là IP bên ngoài và xuất hiện ngay sau giai đoạn **post-infection**, tức là sau khi máy nạn nhân tải xuống file `.rar` từ `95.181.198.231`.
+In the endpoint list, I noticed an IP address beginning with `185.`: `185.244.150.230`. This was an external IP and it appeared immediately after the **post-infection** stage, meaning after the victim host downloaded the `.rar` file from `95.181.198.231`.
 
-Tuy nhiên, khi kiểm tra kỹ hơn, mình thấy trong file `PCAP` không chỉ có một IP bắt đầu bằng `185.`. Ngoài `185.244.150.230`, còn có một IP khác là `185.158.251.55`. Vì vậy, nếu chỉ dựa vào điều kiện “IP bắt đầu bằng `185.`” thì chưa đủ để kết luận. Mình cần đặt từng IP vào đúng **infection timeline** để xem IP nào có mối liên hệ chặt chẽ hơn với hoạt động của mã độc.
+However, when I examined it more closely, I saw that the `PCAP` file did not contain only one IP beginning with `185.`. In addition to `185.244.150.230`, there was another IP: `185.158.251.55`. Therefore, relying only on the condition “IP begins with `185.`” was not enough to conclude anything. I needed to place each IP into the correct **infection timeline** to see which one had a stronger relationship to the malware activity.
 
-Trước đó, ở khoảng packet `911`, host `10.11.27.101` đã gửi request tải xuống file `oiioiashdqbwe.rar` từ `95.181.198.231`.
+Earlier, around packet `911`, host `10.11.27.101` had sent a request to download the file `oiioiashdqbwe.rar` from `95.181.198.231`.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-11-35-48.png)
 
@@ -254,11 +253,11 @@ Trước đó, ở khoảng packet `911`, host `10.11.27.101` đã gửi request
 GET /oiioiashdqbwe.rar HTTP/1.1
 ```
 
-Đây là thời điểm rất đáng chú ý vì file `.rar` này được xác định là **follow-up malware** trong chuỗi lây nhiễm. Ngay sau giai đoạn này, đến khoảng packet **1203**, host `10.11.27.101` tiếp tục chủ động thiết lập kết nối đến `185.244.150.230` qua port `443`.
+This was a very important moment because the `.rar` file had been identified as **follow-up malware** in the infection chain. Immediately after this, around packet **1203**, host `10.11.27.101` began establishing a connection to `185.244.150.230` over port `443`.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-11-37-52.png)
 
-Quá trình kết nối được thể hiện qua TCP handshake:
+The connection was visible through the TCP handshake:
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-11-38-20.png)
 
@@ -269,32 +268,32 @@ Quá trình kết nối được thể hiện qua TCP handshake:
 10.11.27.101      → 185.244.150.230        TLSv1.2 Client Hello
 ```
 
-Điều này cho thấy `10.11.27.101` là phía chủ động khởi tạo kết nối ra ngoài. Trong bối cảnh máy này vừa tải xuống payload đáng ngờ, kết nối TLS đến một IP lạ ngay sau đó là một dấu hiệu cần được ưu tiên kiểm tra.
+This showed that `10.11.27.101` was the active initiator of the outbound connection. In the context of a host that had just downloaded a suspicious payload, a TLS connection to an unfamiliar IP immediately afterward was a strong indicator that deserved priority investigation.
 
-Một điểm quan trọng khác là gói **Client Hello** đến `185.244.150.230` không chứa **SNI**. Thông thường, khi một trình duyệt hoặc ứng dụng hợp pháp truy cập website HTTPS, trường SNI sẽ cho biết client đang muốn truy cập domain nào. Tuy nhiên, ở đây client kết nối trực tiếp đến IP `185.244.150.230:443` mà không khai báo tên domain trong **SNI**.
+Another important point was that the **Client Hello** packet to `185.244.150.230` did not contain **SNI**. Normally, when a legitimate browser or application accesses an HTTPS website, the SNI field indicates which domain the client is trying to reach. Here, however, the client connected directly to IP `185.244.150.230:443` without announcing a domain in **SNI**.
 
-Điều này làm tăng mức độ đáng nghi của traffic, vì nó gợi ý rằng malware có thể đang sử dụng **hardcoded C2 IP** thay vì truy cập qua domain thông thường. Khi kiểm tra thêm phần DNS, mình cũng không quan sát thấy DNS query nào resolve trực tiếp ra `185.244.150.230`. Nói cách khác, máy nạn nhân dường như đang kết nối thẳng đến IP này mà không cần bước phân giải tên miền.
+This increased the suspiciousness of the traffic, because it suggested that the malware might be using a **hardcoded C2 IP** rather than accessing a normal domain. When I checked the DNS traffic as well, I did not observe any DNS query resolving directly to `185.244.150.230`. In other words, the victim host appeared to be connecting directly to that IP without an intermediate name resolution step.
 
-Trong khi đó, IP `185.158.251.55` cũng xuất hiện trong file `PCAP`, nhưng nó xuất hiện muộn hơn, khoảng packet `1420+ / 1429`, tức là sau một khoảng thời gian đáng kể so với thời điểm tải xuống file `.rar`. Vì vậy, xét theo **timeline correlation**, `185.244.150.230` có mối liên hệ gần và rõ hơn với giai đoạn **post-infection**.
+By contrast, IP `185.158.251.55` also appeared in the `PCAP`, but it appeared later, around packets `1420+ / 1429`, meaning much later than the point when the `.rar` file was downloaded. Therefore, based on **timeline correlation**, `185.244.150.230` had a closer and clearer relationship to the **post-infection** period.
 
 ![](/assets/img/posts/2026-07-23-Network-Analysis/2026-07-24-11-41-03.png)
 
 <br>
 
-Đến đây, mình có thể nối các bằng chứng lại như sau:
-- Host nghi nhiễm là `10.11.27.101`
-- Host này tải xuống file `oiioiashdqbwe.rar` từ `95.181.198.231`
-- Ngay sau đó, host tiếp tục kết nối đến `185.244.150.230:443`
-- Kết nối sử dụng **TLSv1.2**
-- Gói Client Hello không có **SNI**
-- Không thấy DNS query resolve trực tiếp ra `185.244.150.230`
-- IP `185.158.251.55` xuất hiện muộn hơn nên có mức độ liên kết thấp hơn với thời điểm tải payload
+At this point, I could connect the evidence as follows:
+- The infected host was `10.11.27.101`
+- That host downloaded the file `oiioiashdqbwe.rar` from `95.181.198.231`
+- Immediately afterward, it continued connecting to `185.244.150.230:443`
+- The connection used **TLSv1.2**
+- The Client Hello packet did not contain **SNI**
+- No DNS query resolving directly to `185.244.150.230` was observed
+- IP `185.158.251.55` appeared later and therefore had a weaker association with the payload download time
 
-Từ các yếu tố trên, điểm quyết định không chỉ nằm ở việc IP bắt đầu bằng `185.`, mà là sự kết hợp giữa **timeline, post-infection behavior, TLS traffic, No SNI, No DNS resolution** và mối liên hệ với hoạt động tải xuống `oiioiashdqbwe.rar`.
+From these factors, the decision was not based only on the fact that the IP began with `185.`. Rather, it was the combination of **timeline, post-infection behavior, TLS traffic, no SNI, no DNS resolution**, and its relationship to the download of `oiioiashdqbwe.rar`.
 
-Vì vậy, địa chỉ IP phù hợp nhất với **Dridex post-infection traffic** là: `185.244.150.230`
+Therefore, the IP that best fit the **Dridex post-infection traffic** was: `185.244.150.230`
 
-Các IOC có thể ghi nhận ở giai đoạn này:
+The IOCs that can be recorded at this stage are:
 
 ```text
 Victim IP: 10.11.27.101
@@ -308,19 +307,17 @@ Assessment: Possible hardcoded C2 IP / encrypted C2 communication
 
 <br>
 
+## Conclusion
 
+Through the analysis of the `PCAP` file, I was able to reconstruct a fairly clear infection chain. Initially, the internal host `10.11.27.101` showed signs of accessing the suspicious domain `kychenogg.com` and downloading the file `spet10.spr` from server `95.181.198.231`. Although the file did not have an `.exe` extension, its contents contained the `MZ` signature, indicating that it was likely a Windows executable disguised with a different extension.
 
-## Kết luận
+After that, the traffic showed that host `10.11.27.101` also downloaded the file `oiioiashdqbwe.rar` from `95.181.198.231`. Based on the context of the lab, this was the file that **Ursnif** used to retrieve **Dridex** onto the victim machine. This showed that the attack did not stop at the initial payload, but continued into a **follow-up malware** download stage.
 
-Qua quá trình phân tích file `PCAP`, mình có thể dựng lại được một chuỗi lây nhiễm khá rõ ràng. Ban đầu, host nội bộ `10.11.27.101` có dấu hiệu truy cập đến domain đáng ngờ `kychenogg.com` và tải xuống file `spet10.spr` từ server `95.181.198.231`. Mặc dù file này không mang đuôi `.exe`, nội dung bên trong lại có dấu hiệu `MZ`, cho thấy đây nhiều khả năng là một file thực thi Windows được ngụy trang.
+In the **post-infection** stage, I detected that host `10.11.27.101` actively established a `TLSv1.2` connection to `185.244.150.230:443`. The notable point was that this connection appeared immediately after the `.rar` download stage, the `Client Hello` packet did not contain `SNI`, and no DNS query was observed resolving directly to `185.244.150.230`. These factors suggest that the malware may have been using a **hardcoded C2 IP** to communicate with its control server.
 
-Sau đó, traffic tiếp tục cho thấy host `10.11.27.101` tải thêm file `oiioiashdqbwe.rar` từ `95.181.198.231`. Dựa trên ngữ cảnh của bài lab, đây là file được **Ursnif** sử dụng để retrieve **Dridex** về máy nạn nhân. Điều này cho thấy cuộc tấn công không dừng lại ở payload ban đầu, mà tiếp tục chuyển sang giai đoạn tải **follow-up malware**.
+Although the `PCAP` also contained another IP beginning with `185.` — `185.158.251.55` — that address appeared much later than the payload download time. Therefore, based on the **infection timeline**, **TLS behavior**, **no SNI**, **no DNS resolution**, and its direct relationship to the download of `oiioiashdqbwe.rar`, the IP most likely associated with **Dridex post-infection traffic** was `185.244.150.230`.
 
-Ở giai đoạn **post-infection**, mình phát hiện host `10.11.27.101` chủ động thiết lập kết nối `TLSv1.2` đến `185.244.150.230:443`. Điểm đáng chú ý là kết nối này xuất hiện ngay sau giai đoạn tải file `.rar`, gói `Client Hello` không chứa `SNI`, và không quan sát thấy DNS query nào resolve trực tiếp ra `185.244.150.230`. Những yếu tố này gợi ý rằng malware có thể đang sử dụng **hardcoded C2 IP** để giao tiếp với máy chủ điều khiển.
-
-Mặc dù trong file `PCAP` còn có một IP khác cũng bắt đầu bằng `185.` là `185.158.251.55`, địa chỉ này xuất hiện muộn hơn đáng kể so với thời điểm tải payload. Vì vậy, xét theo **infection timeline**, **TLS behavior**, **No SNI**, **No DNS resolution** và mối liên hệ trực tiếp với hoạt động tải xuống `oiioiashdqbwe.rar`, IP có khả năng liên quan đến **Dridex post-infection traffic** là `185.244.150.230`.
-
-Các **IOC** quan trọng ghi nhận được trong bài thực hành này bao gồm:
+The important **IOCs** identified in this exercise include:
 
 ```text
 Victim IP:
@@ -356,6 +353,6 @@ Client Hello without SNI
 No DNS resolution observed for 185.244.150.230
 ```
 
-Tổng kết lại, bài thực hành này cho thấy tầm quan trọng của việc không chỉ nhìn vào một packet đơn lẻ, mà phải đặt từng dấu hiệu vào đúng timeline của cuộc tấn công. Bằng cách kết hợp `HTTP request`, `Follow Stream`, `Export HTTP Objects`, `Endpoints`, `DNS traffic và TLS handshake`, mình có thể từng bước xác định được victim, payload server, follow-up malware URL và post-infection C2 indicator.
+In summary, this exercise shows the importance of not looking at a single packet in isolation, but of placing each indicator into the correct timeline of the attack. By combining `HTTP requests`, `Follow Stream`, `Export HTTP Objects`, `Endpoints`, `DNS traffic`, and `TLS handshakes`, I was able to step by step identify the victim, the payload server, the follow-up malware URL, and the post-infection C2 indicator.
 
-Đây cũng là một ví dụ điển hình cho cách phân tích network traffic trong một case nhiễm mã độc: bắt đầu từ dấu hiệu bất thường, lần theo từng kết nối, trích xuất IOC, rồi cuối cùng đưa ra kết luận dựa trên bằng chứng thay vì chỉ dựa vào một chỉ báo đơn lẻ.
+This is also a typical example of how to analyze network traffic in a malware infection case: starting from abnormal signs, following each connection, extracting IOCs, and finally drawing conclusions based on evidence rather than relying on a single indicator alone.

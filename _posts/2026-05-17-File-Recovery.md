@@ -5,165 +5,162 @@ categories: [Forensics]
 
 ---
 
-**Introduce: Đây là bài lab mô phỏng case thực tế cách các chuyên viên forensics khôi phục các file, evidence đã bị xóa bằng FTK Imager và Autopsy. Cùng mình nhập vai vào các chuyên gia pháp y số nhé.**
-
+**Introduce: This is a hands-on lab that simulates a real-world forensic case in which analysts recover deleted files and evidence using FTK Imager and Autopsy. Let me step into the role of a digital forensics expert.**
 
 ===============================================================================================
 
 <br>
-Mình có tạo một phân vùng ổ đĩa (Z:) chỉ 250MB để cho tiện nhằm phục vụ cho môi trường lab học tập. Trong thực tế thì các chuyên gia sẽ đọc toàn bộ dung lượng của các ổ quan trọng như C hoặc D….
+I created a disk partition (Z:) with only 250MB so the lab environment would be easier to manage. In real life, analysts would examine the full contents of important drives such as C or D.
 
 ![pic1](/assets/img/posts/FileRecovery/pic1.png)
- 
-Trong ổ Z mình sẽ tiến hành tạo hai file, hai file này đóng vai trò giả lập như các file bằng chứng quan trọng nào đó
+
+Inside the Z: drive, I created two files. These files serve as stand-ins for important pieces of evidence.
 
 ![pic2](/assets/img/posts/FileRecovery/pic2.png)
- 
-Nội dung của các file lần lượt như hai hình dưới
- 
- ![pic3](/assets/img/posts/FileRecovery/pic3.png)
- 
- ![pic4](/assets/img/posts/FileRecovery/pic4.png)
 
-Bây giờ, hãy tưởng tượng một hacker đã hack được vào máy này và xóa đi 2 file quan trọng này. Giả sử mình là hacker, mình sẽ xóa 2 file này theo 2 cách
+The contents of the files are shown in the two images below.
 
-Mình sẽ xóa file 1 bằng cách chỉ đơn thuần nhấn delete, tức là file này sẽ bay vào recycle bin
- 
+![pic3](/assets/img/posts/FileRecovery/pic3.png)
+
+![pic4](/assets/img/posts/FileRecovery/pic4.png)
+
+Now imagine that a hacker gained access to this machine and deleted these two important files. Suppose I am the attacker, and I delete them in two different ways.
+
+I will delete the first file simply by pressing Delete, which sends it to the Recycle Bin.
+
 ![pic5](/assets/img/posts/FileRecovery/pic5.png)
 
-File 2 mình sẽ xóa vĩnh viễn bằng cách giữ phím shift sau đó nhấn delete
- 
+I will permanently delete the second file by pressing Shift + Delete.
+
 ![pic6](/assets/img/posts/FileRecovery/pic6.png)
 
-Lúc này ổ đĩa đã trống không
- 
+At this point, the drive appears empty.
+
 ![pic7](/assets/img/posts/FileRecovery/pic7.png)
 
-Đây là lúc chúng ta sẽ là chuyên viên phân tích pháp y số! Chúng ta phải bằng mọi cách khôi phục được các file đã bị xóa để phục vụ việc điều tra
+This is where we step in as digital forensics analysts. We must do whatever is necessary to recover the deleted files to support the investigation.
 
-Với các chuyên viên pháp y số, họ sẽ không thao tác/điều tra trực tiếp trên ổ đĩa máy đối tượng. Thay vào đó họ sẽ tạo một bản copy của ổ đĩa, đưa bản copy đó vào thiết bị di động (ổ cứng rời, usb,…) và đem về phòng Lab để tiến hành điều tra.
+For forensic analysts, we do not investigate the target machine directly. Instead, we create a forensic image of the drive, copy it to a removable device such as an external hard drive or USB, and bring it to the lab for analysis.
 
-Chúng ta cũng sẽ follow procedures y như vậy. Đầu tiên hãy tạo một bản copy của ổ Z bằng **FTK Imager**
+We will follow the same procedure. First, create a copy of the Z: drive with **FTK Imager**.
 
 ![pic8](/assets/img/posts/FileRecovery/pic8.png)
 
-Chọn Logical Drive
+Select Logical Drive.
 
 ![pic9](/assets/img/posts/FileRecovery/pic9.png)
 
-Chọn ổ cần copy
+Select the drive to copy.
 
 ![pic10](/assets/img/posts/FileRecovery/pic10.png)
 
-Chọn định dạng .dd
+Choose the .dd format.
 
 ![pic11](/assets/img/posts/FileRecovery/pic11.png)
- 
-Phần đặt tên, cho hồ sơ điều tra thì đặt tên gì cũng được. Sau đó click Next
+
+For the case file name, any name is acceptable. Then click Next.
 
 ![pic12](/assets/img/posts/FileRecovery/pic12.png)
- 
-Chọn thư mục đầu ra của file và đặt tên cho file
+
+Choose the output directory and name the image file.
 
 ![pic13](/assets/img/posts/FileRecovery/pic13.png)
- 
-Về lại đây thì click Start
+
+Then click Start.
 
 ![pic14](/assets/img/posts/FileRecovery/pic14.png)
- 
-Sau khi xong thì chúng ta được các mã hash như hình. Theo mình đây là thông tin quan trọng cần lưu lại, vì mã hash được dùng để **kiểm tra tính toàn vẹn** của file. Các bạn nên lưu lại và cất ở nơi dễ tìm.
+
+Once completed, we get the hash values shown in the image. In my view, this is important information to preserve because hashes are used to verify the integrity of the evidence. You should save them somewhere easy to find.
 
 ![pic15](/assets/img/posts/FileRecovery/pic15.png)
- 
-File copy của ổ đĩa sẽ như thế này nếu bạn follow các bước trên và thành công. File này thì không mở được bằng cách thông thường. 
 
-Chúng ta sẽ dùng **Autopsy** để mở, một công cụ forensics phục vụ việc điều tra các file ổ đĩa và bằng chứng.
+The copied image of the drive will look like this if you follow the steps successfully. This file cannot be opened normally.
+
+We will use **Autopsy** to open it, a forensic tool used to investigate disk images and evidence.
 
 ![pic16](/assets/img/posts/FileRecovery/pic16.png)
 
-Chọn New Case sau đó đặt tên
+Select New Case and then name it.
 
-![pic17](/assets/img/posts/FileRecovery/pic17.png) 
+![pic17](/assets/img/posts/FileRecovery/pic17.png)
 
-Tại đây, trỏ đến file copy của ổ đĩa ban đầu lúc nãy, click Next
+Here, point to the image file of the original drive, then click Next.
 
-Giao diện chính của **Autopsy**:
+The main interface of **Autopsy**:
 
 ![pic18](/assets/img/posts/FileRecovery/pic18.png)
- 
-Trong này có khá nhiều mục hay ho mà mình muốn giới thiệu với các bạn, chẳng hạn khi click vào mục **Timeline**
+
+There are many interesting sections here that I want to introduce, such as clicking **Timeline**.
 
 ![pic19](/assets/img/posts/FileRecovery/pic19.png)
- 
-Trong đây ghi lại các mốc thời gian có sự kiện thay đổi bên trong ổ đĩa
 
-Khi qua tab List, ta sẽ thấy toàn bộ log thời gian về các event như tạo, truy cập, chỉnh sửa, xóa file. Tất nhiên sẽ có các file chúng ta đã tạo và xóa ở đầu bài lab.
+This records the timeline of events that changed the contents of the drive.
+
+When you switch to the List tab, you will see the full chronological logs of events such as file creation, access, modification, and deletion. Of course, this includes the files we created and deleted at the beginning of the lab.
 
 ![pic20](/assets/img/posts/FileRecovery/pic20.png)
 
-File SECRET được tạo vào lúc 22:16, SUPER SECRET được tạo vào lúc 22:17:
+The file SECRET was created at 22:16, and SUPER SECRET at 22:17:
 
 ![pic21](/assets/img/posts/FileRecovery/pic21.png)
 
-Truy cập file vào lúc 22:18:
+The files were accessed at 22:18:
 
-![pic22](/assets/img/posts/FileRecovery/pic22.png) 
+![pic22](/assets/img/posts/FileRecovery/pic22.png)
 
-Và tương tự như vậy cho các sự kiện khác như **modified**, **file changed**,… đều được ghi lại một cách đầy đủ. Cho nên bất cứ thao tác gì trên ổ đĩa cũng đều bị log lại và được theo dõi sát sao. Và **Autopsy** giúp chúng ta quan sát các log này một cách đầy đủ, trực quan nhất.
+The same pattern applies to other events such as **modified** and **file changed**, which are recorded in a very complete way. So any action taken on the disk is logged and closely monitored. **Autopsy** helps us inspect these logs clearly and intuitively.
 
 <br>
 <br>
 
-Mình sẽ chỉ điểm khác biệt giữa hai cách xóa file ở đầu bài, để ý hình sau đây giúp mình:
+I will point out the difference between the two deletion methods from the beginning of the lab. The following image helps illustrate it:
 
 ![pic23](/assets/img/posts/FileRecovery/pic23.png)
- 
-File SECRET lúc đầu chỉ xóa theo kiểu cho vào recycle bin, nên chúng ta vẫn còn thấy file SECRET còn xuất hiện ở dưới, được báo là đang ở trong **/$RECYCLE.BIN/**
+
+File SECRET was initially deleted in a way that moved it to the Recycle Bin, so we still see it appear below, reported as being inside **/$RECYCLE.BIN/**.
 
 ![pic24](/assets/img/posts/FileRecovery/pic24.png)
- 
-Phần nội dung giống với nội dung chúng ta đã ghi vào file trước đó.
+
+The content matches exactly what we wrote into the file earlier.
 
 <br>
 
-Khác với file SECRET, SUPER SECRET được xóa kiểu vĩnh viễn, cho nên sau sự kiện Modified của SUPER SECRET chúng ta sẽ không còn thấy nó nữa.
- 
+Unlike SECRET, SUPER SECRET was deleted permanently, so after the Modified event for SUPER SECRET, we no longer see it.
+
 ![pic25](/assets/img/posts/FileRecovery/pic25.png)
 
-**Vậy làm sao để khôi phục 2 file này?**
+**So how do we recover these two files?**
 
-Trở về giao diện chính Autopsy, bạn sẽ muốn xem trong mục Deleted Files
- 
+Return to the main Autopsy interface and look under Deleted Files.
+
 ![pic27](/assets/img/posts/FileRecovery/pic27.png)
- 
-Vào file system
+
+Open file system.
 
 ![pic28](/assets/img/posts/FileRecovery/pic28.png)
 
-
-**Đây chính là các bằng chứng chúng ta cần khôi phục**
+**These are the evidence items we need to recover.**
 
 ![pic29](/assets/img/posts/FileRecovery/pic29.png)
 ![pic30](/assets/img/posts/FileRecovery/pic30.png)
- 
-Nội dung đúng chính xác với những gì chúng ta làm ban đầu.
 
-Để khôi phục thật sự, right-click và chọn extract files
- 
+The content matches exactly what we originally created.
+
+To recover the files properly, right-click and choose extract files.
+
 ![pic31](/assets/img/posts/FileRecovery/pic31.png)
 ![pic32](/assets/img/posts/FileRecovery/pic32.png)
- 
-Mình sẽ đưa về lại vị trí ban đầu
+
+I will restore them to their original location.
 
 ![pic33](/assets/img/posts/FileRecovery/pic33.png)
 ![pic34](/assets/img/posts/FileRecovery/pic34.png)
- 
- 
-Như vậy chúng ta đã thành công khôi phục file bị xóa và hoàn thành trách nhiệm của một chuyên viên forensics (file còn lại cách làm cũng tương tự).
+
+As a result, we have successfully recovered the deleted files and completed the work of a forensic analyst (the same process applies to the remaining file).
 
 <br>
 
-Nếu các bạn đã theo dõi đến đây, hy vọng bài lab này sẽ khơi dậy niềm đam mê và tinh thần tò mò của các bạn. Mình rất mong muốn được chia sẻ thêm nhiều kỹ thuật nữa trong giới Forensics đến các bạn! Cảm ơn các bạn đã dành thời gian đọc và làm theo, chúc các bạn một ngày tốt lành!
+If you have followed this all the way through, I hope this lab will spark your interest and curiosity. I would love to share more techniques from the world of forensics with you. Thank you for taking the time to read and follow along, and I wish you a great day!
 
 
 

