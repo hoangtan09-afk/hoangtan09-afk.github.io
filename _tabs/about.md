@@ -4,7 +4,7 @@ icon: fas fa-info-circle
 order: 4
 ---
 <div style="position: relative; text-align: center;">
-  <img src="/assets/img/posts/about/2026-07-27-10-31-15.png" style="width: 100%;">
+  <img src="/assets/img/posts/about/2026-07-27-10-31-15.png" alt="Profile banner" style="width: 100%;" loading="lazy">
   <h1 style="position: absolute; top: 15%; left: 50%; transform: translate(-50%, -50%); color: white; text-shadow: 2px 2px 6px black;">
     I'm Tan-san 👋
   </h1>

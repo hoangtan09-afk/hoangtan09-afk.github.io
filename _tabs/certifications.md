@@ -6,7 +6,8 @@ order: 2
 
 ## Blue Team Level 1 (BTL1) - In Progress
 
-Coming soon...
+>Coming soon...
+{: .prompt-warning }
 
 <br>
 
