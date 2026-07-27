@@ -4,6 +4,13 @@ icon: fas fa-certificate
 order: 2
 ---
 
+## Blue Team Level 1 (BTL1) - In Progress
+
+Coming soon...
+
+<br>
+
+
 ## Certified Cybersecurity Educator Professional (CCEP)
 
 ![](/assets/img/posts/certifications/2026-07-27-10-15-21.png)
