@@ -1,167 +1,169 @@
 ---
-title: "File Recovery"
+title: "File Recovery Lab"
 date: 2026-05-17 00:00:00 +07000
 categories: [Forensics]
 
 ---
 
-**Introduce: This is a hands-on lab that simulates a real-world forensic case in which analysts recover deleted files and evidence using FTK Imager and Autopsy. Let me step into the role of a digital forensics expert.**
+**Introduction**
 
-===============================================================================================
+This hands-on lab simulates a real-world **digital forensics scenario**, demonstrating the recovery of **deleted files and evidence** using industry-standard tools: **FTK Imager** and **Autopsy**. In this exercise, we will assume the role of a **digital forensics expert** to investigate a **compromised system**.
 
-<br>
-I created a disk partition (Z:) with only 250MB so the lab environment would be easier to manage. In real life, analysts would examine the full contents of important drives such as C or D.
+---
+
+### Phase 1: Environment Setup and Incident Simulation
+
+To create a manageable lab environment, a dedicated **250MB disk partition (Z:)** was provisioned. In a real-world investigation, analysts typically examine **full-capacity drives** (e.g., C: or D:).
 
 ![pic1](/assets/img/posts/FileRecovery/pic1.png)
 
-Inside the Z: drive, I created two files. These files serve as stand-ins for important pieces of evidence.
+Within the Z: drive, two files were created to represent **critical evidentiary data**.
 
 ![pic2](/assets/img/posts/FileRecovery/pic2.png)
 
-The contents of the files are shown in the two images below.
+The contents of these files are detailed in the images below:
 
 ![pic3](/assets/img/posts/FileRecovery/pic3.png)
 
 ![pic4](/assets/img/posts/FileRecovery/pic4.png)
 
-Now imagine that a hacker gained access to this machine and deleted these two important files. Suppose I am the attacker, and I delete them in two different ways.
+**Simulating the Attack:** 
+Suppose a **malicious actor** gains unauthorized access to this system and attempts to **destroy the evidence**. We will simulate this by deleting the two files using different methods:
 
-I will delete the first file simply by pressing Delete, which sends it to the Recycle Bin.
+1. **Standard Deletion:** The first file is deleted using the standard `Delete` key, which moves it to the **Recycle Bin**.
 
 ![pic5](/assets/img/posts/FileRecovery/pic5.png)
 
-I will permanently delete the second file by pressing Shift + Delete.
+2. **Permanent Deletion:** The second file is permanently deleted using `Shift + Delete`, bypassing the Recycle Bin entirely.
 
 ![pic6](/assets/img/posts/FileRecovery/pic6.png)
 
-At this point, the drive appears empty.
+Following these actions, the drive appears **completely empty** to a standard user.
 
 ![pic7](/assets/img/posts/FileRecovery/pic7.png)
 
-This is where we step in as digital forensics analysts. We must do whatever is necessary to recover the deleted files to support the investigation.
+### Phase 2: Evidence Acquisition
 
-For forensic analysts, we do not investigate the target machine directly. Instead, we create a forensic image of the drive, copy it to a removable device such as an external hard drive or USB, and bring it to the lab for analysis.
+As **digital forensics analysts**, our objective is to **recover these deleted files** to support an investigation. 
 
-We will follow the same procedure. First, create a copy of the Z: drive with **FTK Imager**.
+A fundamental rule of digital forensics is to **never investigate the target machine directly**. Instead, we acquire a **forensic image** of the drive, transfer it to a **secure storage medium**, and analyze it in an **isolated laboratory environment**.
+
+We will proceed by creating a forensic copy of the Z: drive using **FTK Imager**.
 
 ![pic8](/assets/img/posts/FileRecovery/pic8.png)
 
-Select Logical Drive.
+Select **Logical Drive** as the source type.
 
 ![pic9](/assets/img/posts/FileRecovery/pic9.png)
 
-Select the drive to copy.
+Choose the **target drive (Z:)** for acquisition.
 
 ![pic10](/assets/img/posts/FileRecovery/pic10.png)
 
-Choose the .dd format.
+Select the **Raw (dd)** image format for a **bit-by-bit copy**.
 
 ![pic11](/assets/img/posts/FileRecovery/pic11.png)
 
-For the case file name, any name is acceptable. Then click Next.
+Provide an appropriate case or file name (any identifier is acceptable for this lab), then proceed by clicking **Next**.
 
 ![pic12](/assets/img/posts/FileRecovery/pic12.png)
 
-Choose the output directory and name the image file.
+Specify the **destination directory** and assign a name to the **output image file**.
 
 ![pic13](/assets/img/posts/FileRecovery/pic13.png)
 
-Then click Start.
+Click **Start** to begin the imaging process.
 
 ![pic14](/assets/img/posts/FileRecovery/pic14.png)
 
-Once completed, we get the hash values shown in the image. In my view, this is important information to preserve because hashes are used to verify the integrity of the evidence. You should save them somewhere easy to find.
+Upon completion, FTK Imager generates **verification hashes (MD5, SHA-1)**. **Preserving these hash values is critical**, as they guarantee the **integrity of the evidence** throughout the investigation. Ensure these are documented securely.
 
 ![pic15](/assets/img/posts/FileRecovery/pic15.png)
 
-The copied image of the drive will look like this if you follow the steps successfully. This file cannot be opened normally.
+The resulting **forensic image file** cannot be mounted or opened by a standard operating system. It requires **specialized forensic software** for analysis.
 
-We will use **Autopsy** to open it, a forensic tool used to investigate disk images and evidence.
+### Phase 3: Forensic Analysis with Autopsy
+
+We will utilize **Autopsy**, a powerful **digital forensics platform**, to analyze the acquired disk image and extract the necessary evidence.
 
 ![pic16](/assets/img/posts/FileRecovery/pic16.png)
 
-Select New Case and then name it.
+Begin by selecting **New Case** and assigning it a descriptive name.
 
 ![pic17](/assets/img/posts/FileRecovery/pic17.png)
 
-Here, point to the image file of the original drive, then click Next.
+Add a **new data source**, pointing to the forensic image file created in the previous step, and click **Next**.
 
-The main interface of **Autopsy**:
+**Navigating Autopsy:**
+The main interface of Autopsy provides **comprehensive tools** for examining the evidence.
 
 ![pic18](/assets/img/posts/FileRecovery/pic18.png)
 
-There are many interesting sections here that I want to introduce, such as clicking **Timeline**.
+A particularly valuable feature for investigations is the **Timeline** analysis.
 
 ![pic19](/assets/img/posts/FileRecovery/pic19.png)
 
-This records the timeline of events that changed the contents of the drive.
+This section reconstructs the **chronological sequence of events** on the drive.
 
-When you switch to the List tab, you will see the full chronological logs of events such as file creation, access, modification, and deletion. Of course, this includes the files we created and deleted at the beginning of the lab.
+By switching to the **List** tab, analysts can review **detailed logs of file system activity**, including file creation, access, modification, and deletion. As expected, the actions performed at the beginning of this lab are accurately recorded.
 
 ![pic20](/assets/img/posts/FileRecovery/pic20.png)
 
-The file SECRET was created at 22:16, and SUPER SECRET at 22:17:
+* The file `SECRET` was created at 22:16, followed by `SUPER SECRET` at 22:17.
 
 ![pic21](/assets/img/posts/FileRecovery/pic21.png)
 
-The files were accessed at 22:18:
+* Both files were subsequently accessed at 22:18.
 
 ![pic22](/assets/img/posts/FileRecovery/pic22.png)
 
-The same pattern applies to other events such as **modified** and **file changed**, which are recorded in a very complete way. So any action taken on the disk is logged and closely monitored. **Autopsy** helps us inspect these logs clearly and intuitively.
+Similar chronological patterns apply to other file system events (e.g., modified, changed). Autopsy effectively translates complex disk activity into an **intuitive, readable format**, ensuring that any action taken on the system is **logged and traceable**.
 
-<br>
-<br>
+#### Analyzing Deletion Methods
 
-I will point out the difference between the two deletion methods from the beginning of the lab. The following image helps illustrate it:
+The **Timeline feature** clearly illustrates the distinction between the two deletion methods executed earlier.
 
 ![pic23](/assets/img/posts/FileRecovery/pic23.png)
 
-File SECRET was initially deleted in a way that moved it to the Recycle Bin, so we still see it appear below, reported as being inside **/$RECYCLE.BIN/**.
+The file `SECRET` was subjected to a **standard deletion**. Consequently, traces of it remain visible, with its location reported under the **/$RECYCLE.BIN/** directory.
 
 ![pic24](/assets/img/posts/FileRecovery/pic24.png)
 
-The content matches exactly what we wrote into the file earlier.
+Extracting this file reveals that its contents **remain intact** and match the original data.
 
-<br>
-
-Unlike SECRET, SUPER SECRET was deleted permanently, so after the Modified event for SUPER SECRET, we no longer see it.
+Conversely, `SUPER SECRET` underwent **permanent deletion** (`Shift + Delete`). After its final "Modified" event, the file system **no longer actively tracks it**.
 
 ![pic25](/assets/img/posts/FileRecovery/pic25.png)
 
-**So how do we recover these two files?**
+### Phase 4: File Recovery and Extraction
 
-Return to the main Autopsy interface and look under Deleted Files.
+To recover these files, navigate back to the primary Autopsy interface and locate the **Deleted Files** section in the directory tree.
 
 ![pic27](/assets/img/posts/FileRecovery/pic27.png)
 
-Open file system.
+Expand the **File System** node.
 
 ![pic28](/assets/img/posts/FileRecovery/pic28.png)
 
-**These are the evidence items we need to recover.**
+Here, we locate the **remnants of our deleted evidence**. 
 
 ![pic29](/assets/img/posts/FileRecovery/pic29.png)
 ![pic30](/assets/img/posts/FileRecovery/pic30.png)
 
-The content matches exactly what we originally created.
+By examining the data, we can confirm the contents match our original files perfectly.
 
-To recover the files properly, right-click and choose extract files.
+To formally recover the evidence, right-click the target file and select **Extract File(s)**.
 
 ![pic31](/assets/img/posts/FileRecovery/pic31.png)
 ![pic32](/assets/img/posts/FileRecovery/pic32.png)
 
-I will restore them to their original location.
+In this scenario, we will extract the recovered files back to an **analysis directory**.
 
 ![pic33](/assets/img/posts/FileRecovery/pic33.png)
 ![pic34](/assets/img/posts/FileRecovery/pic34.png)
 
-As a result, we have successfully recovered the deleted files and completed the work of a forensic analyst (the same process applies to the remaining file).
+### Conclusion
 
-<br>
+Through this process, we have successfully acquired a **forensic image**, analyzed **file system activity**, and **recovered deleted evidence**, effectively mirroring the workflow of a **digital forensics analyst**. This identical procedure can be applied to recover the remaining file.
 
-If you have followed this all the way through, I hope this lab will spark your interest and curiosity. I would love to share more techniques from the world of forensics with you. Thank you for taking the time to read and follow along, and I wish you a great day!
-
-
-
-
+If you have followed along, I hope this lab has provided valuable insight into the fascinating field of **digital forensics**. Thank you for your time, and I look forward to sharing more advanced techniques in the future!
