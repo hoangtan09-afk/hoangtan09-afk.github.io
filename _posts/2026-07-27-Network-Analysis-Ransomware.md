@@ -114,7 +114,7 @@ The attack lifecycle maps to the MITRE ATT&CK framework as follows:
 
 | Tactic | Technique | ID | Behavior Description |
 | :--- | :--- | :--- | :--- |
-| **Execution** | User Execution: Malicious File | T1204.002 | The user inadvertently downloaded and executed `safecrypt.exe`. |
+| **Execution** | User Execution: Malicious File *(Assessed)* | T1204.002 | The workstation downloaded `safecrypt.exe`, after which ransomware-related activity was observed. Direct user execution could not be confirmed from the available network evidence. |
 | **Command and Control** | Application Layer Protocol: Web Protocols | T1071.001 | The malware communicated with the C2 domain `dunyamuzelerimuzesi.com` over HTTP. |
 | **Impact** | Data Encrypted for Impact | T1486 | The document `Tender.pdf` was encrypted using RSA-4096 and appended with the `.micro` extension. |
 
