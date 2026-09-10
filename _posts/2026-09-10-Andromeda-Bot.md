@@ -1,7 +1,7 @@
 ---
 title: "Andromeda Bot (Vietnamese Write Up)"
 date: 2026-09-10 00:00:00 +07000
-categories: [Malware Analysis]
+categories: [Forensics]
 ---
 
 Phân tích bản sao bộ nhớ và logs bằng **MemProcFS**, **EvtxECmd**, và **Timeline Explorer** để xác định các IOC của **Andromeda Bot**, dựng lại chuỗi thời gian bị nhiễm, và liên kết các thuộc tính đó đến nhóm APT.
