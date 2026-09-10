@@ -1,5 +1,5 @@
 ---
-title: "Andromeda Bot"
+title: "Andromeda Bot (Vietnamese Write Up)"
 date: 2026-09-10 00:00:00 +07000
 categories: [Malware Analysis]
 ---
