@@ -1,5 +1,5 @@
 ---
-title: "Andromeda Bot (Vietnamese Write Up)"
+title: "Andromeda Bot"
 date: 2026-09-10 00:00:00 +07000
 categories: [Forensics]
 ---
