@@ -4,10 +4,9 @@ icon: fas fa-certificate
 order: 2
 ---
 
-## Blue Team Level 1 (BTL1) - In Progress
+## Blue Team Level 1 (BTL1)
 
->Coming soon...
-{: .prompt-warning }
+![](/assets/img/posts/certifications/2026-10-12-09-15-10.png)
 
 <br>
 
