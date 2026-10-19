@@ -4,6 +4,12 @@ icon: fas fa-certificate
 order: 2
 ---
 
+## DEADFACE CTF COMPETITION
+
+![](/assets/img/posts/certifications/2026-10-19-15-53-13.png)
+
+<br>
+
 ## BLUE TEAM LEVEL 1 (BTL1) - CENTRI
 
 ![](/assets/img/posts/certifications/2026-10-19-15-38-27.png)
