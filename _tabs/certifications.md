@@ -6,7 +6,7 @@ order: 2
 
 ## BLUE TEAM LEVEL 1 (BTL1) - CENTRI
 
-![](/assets/img/posts/certifications/2026-10-12-09-15-10.png)
+![](/assets/img/posts/certifications/2026-10-19-15-38-27.png)
 
 <br>
 
